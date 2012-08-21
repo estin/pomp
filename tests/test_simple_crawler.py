@@ -1,19 +1,29 @@
 from pomp.core.base import BaseCrawler, BaseDownloader
 from pomp.core.engine import Pomp
+from pomp.core.item import Item, Field
 
 
 class TestSimplerCrawler(object):
 
     def test_crawler(self):
 
-        class PythonOrgCrawler(BaseCrawler):
+        class DummyItem(Item):
+            f1 = Field()
+            f2 = Field()
+            f3 = Field()
+
+        class DummyCrawler(BaseCrawler):
             ENTRY_URL = "http://python.org/"
 
             def next_url(self, current_page):
                 return None
 
             def extract_items(self, page):
-                return ['1', '2', '3', '4', '5']
+                item = DummyItem()
+                item.f1 = '1'
+                item.f2 = '2'
+                item.f3 = '3'
+                return [item]
 
         class DummyDownloader(BaseDownloader):
 
@@ -22,4 +32,4 @@ class TestSimplerCrawler(object):
 
         pomp = Pomp(downloader=DummyDownloader())
 
-        pomp.pump(PythonOrgCrawler())
+        pomp.pump(DummyCrawler())

@@ -13,12 +13,21 @@ class TestSimplerCrawler(object):
             f3 = Field()
 
         class DummyCrawler(BaseCrawler):
-            ENTRY_URL = "http://python.org/"
+            ENTRY_URL = (
+                "http://python.org/1",
+                "http://python.org/2"
+            )
 
-            def next_url(self, current_page):
-                return None
+            def __init__(self):
+                super(DummyCrawler, self).__init__()
+                self.crawled_urls = []
 
-            def extract_items(self, page):
+            def next_url(self, page):
+                url = 'http://python.org/1/1'
+                return url if url not in self.crawled_urls else None
+
+            def extract_items(self, url, page):
+                self.crawled_urls.append(url)
                 item = DummyItem()
                 item.f1 = '1'
                 item.f2 = '2'

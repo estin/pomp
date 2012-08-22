@@ -1,6 +1,7 @@
 """
 Engine
 """
+from pomp.core.base import iterator
 
 
 class Pomp(object):
@@ -9,13 +10,23 @@ class Pomp(object):
 
         self.downloader = downloader
 
+    def response_callback(self, crawler, url, page):
+
+        crawler.process(url, page)
+
+        urls = crawler.next_url(page)
+
+        if urls:
+            self.downloader.process(
+                iterator(urls),
+                self.response_callback,
+                crawler
+            )
+
     def pump(self, crawler):
 
-        # fetch entry url
-        page = self.downloader.get(crawler.ENTRY_URL)
-
-        # process page
-        crawler.process(page)
-
-        # get next url
-        crawler.next_url(page)
+        self.downloader.process(
+            iterator(crawler.ENTRY_URL),
+            self.response_callback,
+            crawler
+        )

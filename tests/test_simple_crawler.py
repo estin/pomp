@@ -54,11 +54,26 @@ class TestSimplerCrawler(object):
                     return None
                 return item
 
+        class SavePipeline(BasePipeline):
+
+            def __init__(self, collection):
+                self.collection = collection
+
+            def process(self, item):
+                self.collection.append(item)
+                return item
+
+        result = []
+
         pomp = Pomp(
             downloader=DummyDownloader(),
-            pipelines=[IncPipeline(), FilterPipeline()],
+            pipelines=[
+                IncPipeline(),
+                FilterPipeline(),
+                SavePipeline(result),
+            ],
         )
 
-        result = pomp.pump(DummyCrawler())
+        pomp.pump(DummyCrawler())
 
         assert len(result) == 2

@@ -10,10 +10,6 @@ class Pomp(object):
 
         self.downloader = downloader
         self.pipelines = pipelines or tuple()
-        self.collector = []
-
-    def collect(self, items):
-        self.collector += items
 
     def response_callback(self, crawler, url, page):
 
@@ -22,8 +18,6 @@ class Pomp(object):
         if items:
             for pipe in self.pipelines:
                 items = filter(None, map(pipe.process, items))
-
-        self.collect(items)
 
         urls = crawler.next_url(page)
 
@@ -44,7 +38,5 @@ class Pomp(object):
                 self.response_callback,
                 crawler
             )
-
-            return self.collector
         finally:
             map(lambda pipe: pipe.stop(), self.pipelines)

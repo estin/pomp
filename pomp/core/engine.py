@@ -1,7 +1,7 @@
 """
 Engine
 """
-from pomp.core.base import iterator
+from pomp.core.utils import iterator
 
 
 class Pomp(object):

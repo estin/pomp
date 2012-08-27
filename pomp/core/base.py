@@ -1,13 +1,6 @@
 """
 Base classes
 """
-import types
-
-
-def iterator(var):
-    if isinstance(var, types.StringTypes):
-        return iter((var,))
-    return iter(var)
 
 
 class BaseCrawler(object):

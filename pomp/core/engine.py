@@ -1,6 +1,7 @@
 """
 Engine
 """
+import itertools
 from pomp.core.utils import iterator
 
 
@@ -31,25 +32,27 @@ class Pomp(object):
         else:
             return urls
 
-
     def pump(self, crawler):
 
         map(lambda pipe: pipe.start(), self.pipelines)
 
         try:
-            next_urls = list(self.downloader.process(
+            next_urls = self.downloader.process(
                 iterator(crawler.ENTRY_URL),
                 self.response_callback,
                 crawler
-            ))
+            )
 
             if not crawler.is_depth_first:
                 for urls in next_urls:
-                    next_urls += list(self.downloader.process(
-                        iterator(urls),
-                        self.response_callback,
-                        crawler
-                    ))
+                    next_urls = itertools.chain(
+                        next_urls,
+                        self.downloader.process(
+                            iterator(urls),
+                            self.response_callback,
+                            crawler
+                        )
+                    )
 
         finally:
             map(lambda pipe: pipe.stop(), self.pipelines)

@@ -12,7 +12,7 @@ here = os.path.dirname(os.path.abspath(__file__))
 
 setup(
     name='pomp',
-    version='0.0.1dev',
+    version = ":versiontools:pomp:",
     url='http://bitbucket.org/estin/pomp',
     license='BSD',
     author='Evgeniy Tatarkin',
@@ -23,7 +23,8 @@ setup(
     zip_safe=False,
     platforms='any',
     tests_require=['nose >= 1.0',],
-    test_suite = 'nose.collector',
+    test_suite='nose.collector',
+    setup_requires=['versiontools >= 1.8',],
     classifiers=[
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',

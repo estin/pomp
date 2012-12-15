@@ -4,7 +4,6 @@ Base classes
 CRAWL_DEPTH_FIRST_METHOD = 'depth'
 CRAWL_WIDTH_FIRST_METHOD = 'width'
 
-
 class BaseCrawler(object):
     ENTRY_URL = None
     CRAWL_METHOD = CRAWL_DEPTH_FIRST_METHOD

@@ -1,8 +1,12 @@
+import logging
 from nose.tools import assert_equal
 from pomp.core.base import BaseCrawler, BaseDownloader, BasePipeline
 from pomp.core.base import CRAWL_WIDTH_FIRST_METHOD
 from pomp.core.engine import Pomp
 from pomp.core.item import Item, Field
+
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 class DummyItem(Item):

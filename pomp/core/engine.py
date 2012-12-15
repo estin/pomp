@@ -1,8 +1,12 @@
 """
 Engine
 """
+import logging
 import itertools
 from pomp.core.utils import iterator
+
+
+log = logging.getLogger('pomp.engine')
 
 
 class Pomp(object):
@@ -14,6 +18,7 @@ class Pomp(object):
 
     def response_callback(self, crawler, url, page):
 
+        log.info('Process %s', url)
         items = crawler.process(url, page)
 
         if items:
@@ -37,7 +42,10 @@ class Pomp(object):
 
     def pump(self, crawler):
 
+        log.info('Start crawler: %s', crawler)
+
         for pipe in self.pipelines:
+            log.info('Start pipe: %s', pipe)
             pipe.start()
 
         try:
@@ -61,4 +69,8 @@ class Pomp(object):
         finally:
 
             for pipe in self.pipelines:
+                log.info('Stop pipe: %s', pipe)
                 pipe.stop() 
+
+
+        log.info('Stop crawler: %s', crawler)

@@ -26,9 +26,10 @@ class BaseCrawler(object):
 class BaseDownloader(object):
 
     def process(self, urls, callback, crawler):
+        # return next urls
         return filter(
             None,
-            map(lambda url: callback(crawler, url, self.get(url)), urls)
+            list(map(lambda url: callback(crawler, url, self.get(url)), urls))
         )
 
     def get(self, url):

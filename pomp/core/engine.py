@@ -20,6 +20,9 @@ class Pomp(object):
             for pipe in self.pipelines:
                 items = filter(None, map(pipe.process, items))
 
+                # launch items pipelinse process
+                items = list(items)
+
         urls = crawler.next_url(page)
         if crawler.is_depth_first:
             if urls:
@@ -34,7 +37,8 @@ class Pomp(object):
 
     def pump(self, crawler):
 
-        map(lambda pipe: pipe.start(), self.pipelines)
+        for pipe in self.pipelines:
+            pipe.start()
 
         try:
             next_urls = self.downloader.process(
@@ -55,4 +59,6 @@ class Pomp(object):
                     )
 
         finally:
-            map(lambda pipe: pipe.stop(), self.pipelines)
+
+            for pipe in self.pipelines:
+                pipe.stop() 

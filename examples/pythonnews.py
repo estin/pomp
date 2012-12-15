@@ -25,7 +25,7 @@ class PythonNewsCrawler(BaseCrawler):
     ENTRY_URL = 'http://python.org/news/'
 
     def extract_items(self, url, page):
-
+        page = page.decode('utf-8')
         for i in news_re.findall(page):
             item = PythonNewsItem()
             item.title, item.published = i[0], i[2]

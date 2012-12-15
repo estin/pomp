@@ -8,7 +8,6 @@ from pomp.core.item import Item, Field
 
 logging.basicConfig(level=logging.DEBUG)
 
-
 class DummyItem(Item):
     value = Field()
     url = Field()
@@ -43,7 +42,7 @@ class DummyCrawler(BaseCrawler):
 class DummyDownloader(BaseDownloader):
 
     def get(slef, url):
-        return '<html><head></head><body></body></html>'
+        return url, '<html><head></head><body></body></html>'
 
 
 class TestSimplerCrawler(object):

@@ -28,7 +28,7 @@ class BaseDownloader(object):
         # return next urls
         return filter(
             None,
-            list(map(lambda url: callback(crawler, url, self.get(url)), urls))
+            list(map(lambda url: callback(crawler, *self.get(url)), urls))
         )
 
     def get(self, url):

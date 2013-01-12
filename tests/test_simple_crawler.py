@@ -36,13 +36,14 @@ class DummyCrawler(BaseCrawler):
         item = DummyItem()
         item.value = 1
         item.url = url
-        return [item]
+        yield item
 
 
 class DummyDownloader(BaseDownloader):
 
-    def get(slef, url):
-        return url, '<html><head></head><body></body></html>'
+    def get(self, urls):
+        for url in urls:
+            yield (url, '<html><head></head><body></body></html>')
 
 
 class TestSimplerCrawler(object):
@@ -72,11 +73,11 @@ class TestSimplerCrawler(object):
         # Depth first method
         pomp.pump(DummyCrawler())
 
-        assert_equal([item.url for item in road.collection], [
+        assert_equal(set([item.url for item in road.collection]), set([
             'http://python.org/1',
             'http://python.org/1/trash',
             'http://python.org/2',
-        ])
+        ]))
 
         # Width first method
         road.reset()
@@ -86,11 +87,11 @@ class TestSimplerCrawler(object):
 
         pomp.pump(DummyWidthCrawler())
 
-        assert_equal([item.url for item in road.collection], [
+        assert_equal(set([item.url for item in road.collection]), set([
             'http://python.org/1',
             'http://python.org/2',
             'http://python.org/1/trash',
-        ])
+        ]))
 
     def test_pipeline(self):
 

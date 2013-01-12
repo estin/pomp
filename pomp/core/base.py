@@ -24,12 +24,41 @@ class BaseCrawler(object):
 
 class BaseDownloader(object):
 
+    def __init__(self, middlewares=None):
+        self.middlewares = middlewares or ()
+
     def process(self, urls, callback, crawler):
-        # return next urls
-        return filter(
-            None,
-            list(map(lambda url: callback(crawler, *self.get(url)), urls))
-        )
+        # start downloading and processing
+        return list(self._lazy_process(urls, callback, crawler))
+
+    def _lazy_process(self, urls, callback, crawler):
+
+        if not urls:
+            return
+
+        _urls = []
+        for url in urls:
+
+            for middleware in self.middlewares:
+                url = middleware.process_request(url)
+                if not url:
+                    break
+
+            if not url:
+                continue
+
+            _urls.append(url)
+
+        if not _urls:
+            return
+
+        for response in self.get(_urls):
+
+            for middleware in self.middlewares:
+                response = middleware.process_response(*response)
+
+            if response:
+                yield callback(crawler, *response)
 
     def get(self, url):
         raise NotImplementedError()
@@ -45,3 +74,12 @@ class BasePipeline(object):
 
     def stop(self):
         pass
+
+
+class BaseDownloaderMiddleware(object):
+
+    def porcess_request(self, url):
+        raise NotImplementedError()
+ 
+    def porcess_response(self, url, page):
+        raise NotImplementedError() 

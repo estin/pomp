@@ -23,10 +23,7 @@ class Pomp(object):
 
         if items:
             for pipe in self.pipelines:
-                items = filter(None, map(pipe.process, items))
-
-                # launch items pipelinse process
-                items = list(items)
+                items = filter(None, list(map(pipe.process, items)))
 
         urls = crawler.next_url(page)
         if crawler.is_depth_first:
@@ -36,6 +33,7 @@ class Pomp(object):
                     self.response_callback,
                     crawler
                 )
+
             return None # end of recursion
         else:
             return urls
@@ -56,15 +54,20 @@ class Pomp(object):
             )
 
             if not crawler.is_depth_first:
-                for urls in next_urls:
-                    next_urls = itertools.chain(
-                        next_urls,
-                        self.downloader.process(
-                            iterator(urls),
-                            self.response_callback,
-                            crawler
+                while True:
+                    if not next_urls:
+                        return
+                    _urls = ()
+                    for urls in next_urls:
+                        _urls = itertools.chain(
+                            _urls,
+                            self.downloader.process(
+                                iterator(urls),
+                                self.response_callback,
+                                crawler
+                            )
                         )
-                    )
+                    next_urls = _urls
 
         finally:
 

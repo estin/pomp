@@ -8,25 +8,35 @@ except ImportError:
 
 from multiprocessing.pool import ThreadPool
 from pomp.core.base import BaseDownloader
+from pomp.core.utils import iterator
+
+
+def fetch(url, timeout):
+    return urlopen(url, timeout=timeout).read()
 
 
 class SimpleDownloader(BaseDownloader):
 
     TIMEOUT = 5
 
-    def get(self, url):
-        response = urlopen(url, timeout=self.TIMEOUT)
-        return url, response.read()
+    def get(self, urls):
+        responses = []
+        for url in iterator(urls):
+            response = fetch(url, timeout=self.TIMEOUT)
+            responses.append((url, response))
+        return responses
 
 
-class ThreadedDownloader(SimpleDownloader):
+class ThreadedDownloader(BaseDownloader):
 
-    def __init__(self, pool_size=5):
+    TIMEOUT = 5
+
+    def __init__(self, pool_size=5, *args, **kwargs):
         self.workers_pool = ThreadPool(processes=pool_size)
+        super(ThreadedDownloader, self).__init__(*args, **kwargs)
+
+    def fetch(self, url):
+        return fetch(url, timeout=self.TIMEOUT)
     
-    def process(self, urls, callback, crawler):
-        pages = self.workers_pool.map(self.get, urls)
-        return filter(
-            None,
-            list(map(lambda res: callback(crawler, *res), pages))
-        )
+    def get(self, urls):
+        return zip(urls, self.workers_pool.map(self.fetch, urls))

@@ -3,7 +3,7 @@ import logging
 from nose.tools import assert_set_equal
 from pomp.core.base import BaseCrawler, BaseDownloaderMiddleware
 from pomp.core.engine import Pomp
-from pomp.contrib import ThreadedDownloader
+from pomp.contrib import ThreadedDownloader, UrllibAdapterMiddleware
 from pomp.core.base import CRAWL_WIDTH_FIRST_METHOD
 
 from mockserver import HttpServer, make_sitemap
@@ -18,10 +18,10 @@ class DummyCrawler(BaseCrawler):
     def __init__(self):
         super(DummyCrawler, self).__init__()
 
-    def next_url(self, page):
-        return page.get('links', [])
+    def next_url(self, response):
+        return response.body.get('links', [])
 
-    def extract_items(self, url, page):
+    def extract_items(self, response):
         return
 
 
@@ -31,12 +31,15 @@ class RequestResponseMiddleware(BaseDownloaderMiddleware):
         self.requested_urls = []
         self.prefix_url = prefix_url
     
-    def process_request(self, url):
-        self.requested_urls.append(url)
-        return '%s%s' % (self.prefix_url, url) if self.prefix_url else url
+    def process_request(self, request):
+        self.requested_urls.append(request.url)
+        request.url = '%s%s' % (self.prefix_url, request.url) \
+            if self.prefix_url else request.url
+        return request
     
-    def process_response(self, url, page):
-        return url, json.loads(page.decode('utf-8'))
+    def process_response(self, response):
+        response.body = json.loads(response.body.decode('utf-8'))
+        return response
 
 
 class TestThreadedCrawler(object):
@@ -53,7 +56,9 @@ class TestThreadedCrawler(object):
     def test_thread_pooled_downloader(self):
         req_resp_midlleware = RequestResponseMiddleware(prefix_url=self.httpd.location)
         pomp = Pomp(
-            downloader=ThreadedDownloader(middlewares=[req_resp_midlleware]),
+            downloader=ThreadedDownloader(
+                middlewares=[UrllibAdapterMiddleware(), req_resp_midlleware]
+            ),
             pipelines=[],
         )
 

@@ -11,8 +11,8 @@ class BaseCrawler(object):
     def next_url(self, page):
         raise NotImplementedError()
 
-    def process(self, url, page):
-        return self.extract_items(url, page)
+    def process(self, response):
+        return self.extract_items(response)
 
     def extract_items(self, url, page):
         raise NotImplementedError()
@@ -36,29 +36,31 @@ class BaseDownloader(object):
         if not urls:
             return
 
-        _urls = []
-        for url in urls:
+        requests = []
+        for request in urls:
 
             for middleware in self.middlewares:
-                url = middleware.process_request(url)
-                if not url:
+                request = middleware.process_request(request)
+                if not request:
                     break
 
-            if not url:
+            if not request:
                 continue
 
-            _urls.append(url)
+            requests.append(request)
 
-        if not _urls:
+        if not requests:
             return
 
-        for response in self.get(_urls):
+        for response in self.get(requests):
 
             for middleware in self.middlewares:
-                response = middleware.process_response(*response)
+                response = middleware.process_response(response)
+                if not response:
+                    break
 
             if response:
-                yield callback(crawler, *response)
+                yield callback(crawler, response)
 
     def get(self, url):
         raise NotImplementedError()
@@ -78,8 +80,22 @@ class BasePipeline(object):
 
 class BaseDownloaderMiddleware(object):
 
-    def porcess_request(self, url):
+    def porcess_request(self, request):
         raise NotImplementedError()
  
-    def porcess_response(self, url, page):
+    def porcess_response(self, response):
         raise NotImplementedError() 
+
+
+class BaseHttpRequest(object):
+
+    def __init__(self, *args, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+
+class BaseHttpResponse(object):
+ 
+    def __init__(self, *args, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)

@@ -5,7 +5,7 @@ import re
 import logging
 from pomp.core.base import BaseCrawler, BasePipeline
 from pomp.core.item import Item, Field
-from pomp.contrib import SimpleDownloader
+from pomp.contrib import SimpleDownloader, UrllibAdapterMiddleware
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -26,14 +26,14 @@ class PythonNewsItem(Item):
 class PythonNewsCrawler(BaseCrawler):
     ENTRY_URL = 'http://python.org/news/'
 
-    def extract_items(self, url, page):
-        page = page.decode('utf-8')
-        for i in news_re.findall(page):
+    def extract_items(self, response):
+        response.body = response.body.decode('utf-8')
+        for i in news_re.findall(response.body):
             item = PythonNewsItem()
             item.title, item.published = i[0], i[2]
             yield item
 
-    def next_url(self, page):
+    def next_url(self, response):
         return None # one page crawler
 
 
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     from pomp.core.engine import Pomp
 
     pomp = Pomp(
-        downloader=SimpleDownloader(),
+        downloader=SimpleDownloader(middlewares=[UrllibAdapterMiddleware()]),
         pipelines=[PrintPipeline()],
     )
 

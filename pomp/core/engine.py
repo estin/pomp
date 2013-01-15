@@ -16,16 +16,16 @@ class Pomp(object):
         self.downloader = downloader
         self.pipelines = pipelines or tuple()
 
-    def response_callback(self, crawler, url, page):
+    def response_callback(self, crawler, response):
 
-        log.info('Process %s', url)
-        items = crawler.process(url, page)
+        log.info('Process %s', response)
+        items = crawler.process(response)
 
         if items:
             for pipe in self.pipelines:
                 items = filter(None, list(map(pipe.process, items)))
 
-        urls = crawler.next_url(page)
+        urls = crawler.next_url(response)
         if crawler.is_depth_first:
             if urls:
                 self.downloader.process(
@@ -56,9 +56,11 @@ class Pomp(object):
             if not crawler.is_depth_first:
                 while True:
                     if not next_urls:
-                        return
+                        break
                     _urls = ()
                     for urls in next_urls:
+                        if not urls:
+                            continue
                         _urls = itertools.chain(
                             _urls,
                             self.downloader.process(

@@ -1,6 +1,7 @@
 import logging
 from nose.tools import assert_equal
-from pomp.core.base import BaseCrawler, BaseDownloader, BasePipeline
+from pomp.core.base import BaseCrawler, BaseDownloader, BasePipeline, \
+    BaseDownloaderMiddleware, BaseHttpRequest, BaseHttpResponse
 from pomp.core.base import CRAWL_WIDTH_FIRST_METHOD
 from pomp.core.engine import Pomp
 from pomp.core.item import Item, Field
@@ -26,24 +27,38 @@ class DummyCrawler(BaseCrawler):
         super(DummyCrawler, self).__init__()
         self.crawled_urls = []
 
-    def next_url(self, page):
+    def next_url(self, response):
         url = 'http://python.org/1/trash'
         result = url if url not in self.crawled_urls else None
         self.crawled_urls.append(url)
         return result
 
-    def extract_items(self, url, page):
+    def extract_items(self, response):
         item = DummyItem()
         item.value = 1
-        item.url = url
+        item.url = response.request.url
         yield item
 
 
 class DummyDownloader(BaseDownloader):
 
-    def get(self, urls):
-        for url in urls:
-            yield (url, '<html><head></head><body></body></html>')
+    def get(self, requests):
+        for request in requests:
+            response = BaseHttpResponse()
+            response.request = request
+            response.body = 'some html code'
+            yield response
+
+
+class UrlToRequestMiddleware(BaseDownloaderMiddleware):
+
+    def process_request(self, req):
+        if isinstance(req, BaseHttpRequest):
+            return req
+        return BaseHttpRequest(url=req)
+
+    def process_response(self, response):
+        return response
 
 
 class TestSimplerCrawler(object):
@@ -64,7 +79,7 @@ class TestSimplerCrawler(object):
         road = RoadPipeline()
 
         pomp = Pomp(
-            downloader=DummyDownloader(),
+            downloader=DummyDownloader(middlewares=[UrlToRequestMiddleware()]),
             pipelines=[
                 road,
             ],
@@ -120,7 +135,7 @@ class TestSimplerCrawler(object):
         result = []
 
         pomp = Pomp(
-            downloader=DummyDownloader(),
+            downloader=DummyDownloader(middlewares=[UrlToRequestMiddleware()]),
             pipelines=[
                 IncPipeline(),
                 FilterPipeline(),

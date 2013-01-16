@@ -25,7 +25,7 @@ class BaseCrawler(object):
 class BaseDownloader(object):
 
     def __init__(self, middlewares=None):
-        self.middlewares = middlewares or ()
+        self.middlewares = middlewares or []
 
     def process(self, urls, callback, crawler):
         # start downloading and processing

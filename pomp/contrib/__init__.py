@@ -16,6 +16,11 @@ class SimpleDownloader(BaseDownloader):
 
     TIMEOUT = 5
 
+    def __init__(self, *args, **kwargs):
+        super(SimpleDownloader, self).__init__(*args, **kwargs)
+        # insert urllib adpter middleware by default
+        self.middlewares.insert(0, UrllibAdapterMiddleware())
+
     def get(self, requests):
         responses = []
         for request in iterator(requests):

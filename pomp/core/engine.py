@@ -40,6 +40,9 @@ class Pomp(object):
 
     def pump(self, crawler):
 
+        log.info('Prepare downloader: %s', self.downloader)
+        self.downloader.prepare()
+
         log.info('Start crawler: %s', crawler)
 
         for pipe in self.pipelines:

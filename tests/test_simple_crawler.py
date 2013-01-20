@@ -44,10 +44,33 @@ class DummyDownloader(BaseDownloader):
 
     def get(self, requests):
         for request in requests:
-            response = BaseHttpResponse()
-            response.request = request
-            response.body = 'some html code'
+            response = DummyResponse(request, 'some html code')
             yield response
+
+
+class DummyRequest(BaseHttpRequest):
+
+    def __init__(self, url):
+        self.request = url
+
+    @property
+    def url(self):
+        return self.request
+
+
+class DummyResponse(BaseHttpResponse):
+    
+    def __init__(self, request, response):
+        self.req = request
+        self.resp = response
+
+    @property
+    def request(self):
+        return self.req
+
+    @property
+    def response(self):
+        return self.response
 
 
 class UrlToRequestMiddleware(BaseDownloaderMiddleware):
@@ -55,7 +78,7 @@ class UrlToRequestMiddleware(BaseDownloaderMiddleware):
     def process_request(self, req):
         if isinstance(req, BaseHttpRequest):
             return req
-        return BaseHttpRequest(url=req)
+        return DummyRequest(url=req)
 
     def process_response(self, response):
         return response

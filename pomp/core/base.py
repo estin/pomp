@@ -27,6 +27,11 @@ class BaseDownloader(object):
     def __init__(self, middlewares=None):
         self.middlewares = middlewares or []
 
+    def prepare(self):
+        self.request_middlewares = self.middlewares
+        self.response_middlewares = self.middlewares[:]
+        self.response_middlewares.reverse()
+
     def process(self, urls, callback, crawler):
         # start downloading and processing
         return list(self._lazy_process(urls, callback, crawler))
@@ -39,7 +44,7 @@ class BaseDownloader(object):
         requests = []
         for request in urls:
 
-            for middleware in self.middlewares:
+            for middleware in self.request_middlewares:
                 request = middleware.process_request(request)
                 if not request:
                     break
@@ -54,7 +59,7 @@ class BaseDownloader(object):
 
         for response in self.get(requests):
 
-            for middleware in self.middlewares:
+            for middleware in self.response_middlewares:
                 response = middleware.process_response(response)
                 if not response:
                     break
@@ -93,9 +98,21 @@ class BaseHttpRequest(object):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+    @property
+    def url(self):
+        raise NotImplementedError()
+
 
 class BaseHttpResponse(object):
- 
+
     def __init__(self, *args, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+    @property
+    def request(self):
+        raise NotImplementedError() 
+    
+    @property
+    def response(self):
+        return self.req

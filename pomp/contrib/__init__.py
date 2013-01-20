@@ -2,9 +2,10 @@
 Standart downloaders
 """
 try:
-    from urllib.request import urlopen
+    from urllib.request import urlopen, Request
 except ImportError:
-    from urllib2 import urlopen
+    from urllib2 import urlopen, Request
+
 
 from multiprocessing.pool import ThreadPool
 from pomp.core.base import BaseDownloader, BaseHttpRequest, \
@@ -44,15 +45,25 @@ class ThreadedDownloader(SimpleDownloader):
 
 
 class UrllibHttpRequest(BaseHttpRequest):
-    pass
+
+    def __init__(self, url):
+        self.request = url if isinstance(url, Request) else Request(url)
+
+    @property
+    def url(self):
+        return self.request.get_full_url()
 
 
 class UrllibHttpResponse(BaseHttpResponse):
 
     def __init__(self, request, urlopen_res):
         self.urlopen_res = urlopen_res
-        self.request = request
+        self.req = request
         self.body = self.urlopen_res.read()
+
+    @property
+    def request(self):
+        return self.req
 
 
 class UrllibAdapterMiddleware(BaseDownloaderMiddleware):

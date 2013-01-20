@@ -3,7 +3,7 @@ import logging
 from nose.tools import assert_set_equal
 from pomp.core.base import BaseCrawler, BaseDownloaderMiddleware
 from pomp.core.engine import Pomp
-from pomp.contrib import ThreadedDownloader
+from pomp.contrib import ThreadedDownloader, UrllibHttpRequest
 from pomp.core.base import CRAWL_WIDTH_FIRST_METHOD
 
 from mockserver import HttpServer, make_sitemap
@@ -31,11 +31,11 @@ class RequestResponseMiddleware(BaseDownloaderMiddleware):
         self.requested_urls = []
         self.prefix_url = prefix_url
     
-    def process_request(self, request):
-        self.requested_urls.append(request.url)
-        request.url = '%s%s' % (self.prefix_url, request.url) \
-            if self.prefix_url else request.url
-        return request
+    def process_request(self, url):
+        self.requested_urls.append(url)
+        url = '%s%s' % (self.prefix_url, url) \
+            if self.prefix_url else url
+        return url
     
     def process_response(self, response):
         response.body = json.loads(response.body.decode('utf-8'))
@@ -55,10 +55,13 @@ class TestThreadedCrawler(object):
 
     def test_thread_pooled_downloader(self):
         req_resp_midlleware = RequestResponseMiddleware(prefix_url=self.httpd.location)
+
+        downloader = ThreadedDownloader()
+
+        downloader.middlewares.insert(0, req_resp_midlleware)
+
         pomp = Pomp(
-            downloader=ThreadedDownloader(
-                middlewares=[req_resp_midlleware]
-            ),
+            downloader=downloader,
             pipelines=[],
         )
 

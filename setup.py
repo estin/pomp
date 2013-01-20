@@ -2,9 +2,9 @@
 import os
 
 try:
-    from setuptools import setup
+    from setuptools import setup, find_packages
 except ImportError:
-    from distutils.core import setup
+    from distutils.core import setup, find_packages
 
 
 here = os.path.dirname(os.path.abspath(__file__))
@@ -19,7 +19,7 @@ setup(
     author_email='tatarkin.evg@gmail.com',
     description='Screen scraping and web crawling framework',
     long_description=open(os.path.join(here, 'README.rst')).read(),
-    packages=['pomp',],
+    packages=find_packages(),
     zip_safe=False,
     platforms='any',
     tests_require=['nose >= 1.0',],

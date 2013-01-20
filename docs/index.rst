@@ -1,22 +1,18 @@
-.. pomp documentation master file, created by
-   sphinx-quickstart on Sun Jan 20 12:09:48 2013.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+:orphan:
 
-Welcome to pomp's documentation!
-================================
+Pomp
+====
 
-Contents:
+.. module:: pomp.engine
 
-.. toctree::
-   :maxdepth: 2
+Pomp is an screen scraping framework like `Scrapy`_ but more simple and
+without hard `Twisted`_ dependency.
 
+Main goal of project - easy extracting structured data from lots of sources
 
+.. _Scrapy: http://scrapy.org/
+.. _Twisted: http://twistedmatrix.com/
+.. _example sourcecode:
+   https://bitbucket.org/estin/pomp/src/tip/examples?at=default
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
+.. include:: contents.rst.inc

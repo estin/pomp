@@ -112,7 +112,17 @@ class BaseHttpResponse(object):
     @property
     def request(self):
         raise NotImplementedError() 
-    
+
     @property
     def response(self):
         return self.req
+
+
+class BaseDownloadException(Exception):
+
+    def __init__(self, request, exception):
+        self.request = request
+        self.execption = exception
+
+    def __str__(self):
+        return 'Exception on %s - %s' % (self.request, self.execption)

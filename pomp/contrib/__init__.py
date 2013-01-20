@@ -7,10 +7,14 @@ except ImportError:
     from urllib2 import urlopen, Request
 
 
+import logging
 from multiprocessing.pool import ThreadPool
 from pomp.core.base import BaseDownloader, BaseHttpRequest, \
-    BaseHttpResponse, BaseDownloaderMiddleware
+    BaseHttpResponse, BaseDownloaderMiddleware, BaseDownloadException
 from pomp.core.utils import iterator
+
+
+log = logging.getLogger('pomp.contrib.urllib')
 
 
 class SimpleDownloader(BaseDownloader):
@@ -30,8 +34,12 @@ class SimpleDownloader(BaseDownloader):
         return responses
 
     def _fetch(self, request, timeout=TIMEOUT):
-        res = urlopen(request.url, timeout=timeout)
-        return UrllibHttpResponse(request, res)  
+        try:
+            res = urlopen(request.url, timeout=timeout)
+            return UrllibHttpResponse(request, res)
+        except Exception as e:
+            log.exception('Exception on %s', request)
+            return BaseDownloadException(request, exception=e)
 
 
 class ThreadedDownloader(SimpleDownloader):
@@ -56,14 +64,20 @@ class UrllibHttpRequest(BaseHttpRequest):
 
 class UrllibHttpResponse(BaseHttpResponse):
 
-    def __init__(self, request, urlopen_res):
-        self.urlopen_res = urlopen_res
+    def __init__(self, request, response):
         self.req = request
-        self.body = self.urlopen_res.read()
+        self.resp = response
+
+        if not isinstance(response, Exception):
+            self.body = self.resp.read()
 
     @property
     def request(self):
         return self.req
+
+    @property
+    def response(self):
+        return self.response 
 
 
 class UrllibAdapterMiddleware(BaseDownloaderMiddleware):

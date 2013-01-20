@@ -1,9 +1,10 @@
 import json
 import logging
-from nose.tools import assert_set_equal
-from pomp.core.base import BaseCrawler, BaseDownloaderMiddleware
+from nose.tools import assert_set_equal, assert_equal
+from pomp.core.base import BaseCrawler, BaseDownloaderMiddleware, \
+    BaseDownloadException
 from pomp.core.engine import Pomp
-from pomp.contrib import ThreadedDownloader, UrllibHttpRequest
+from pomp.contrib import SimpleDownloader, ThreadedDownloader
 from pomp.core.base import CRAWL_WIDTH_FIRST_METHOD
 
 from mockserver import HttpServer, make_sitemap
@@ -42,7 +43,7 @@ class RequestResponseMiddleware(BaseDownloaderMiddleware):
         return response
 
 
-class TestThreadedCrawler(object):
+class TestContribUrllib(object):
 
     @classmethod
     def setupClass(cls):
@@ -72,3 +73,42 @@ class TestThreadedCrawler(object):
             set(req_resp_midlleware.requested_urls),
             set(self.httpd.sitemap.keys())
         )
+
+
+    def test_exception_handling(self):
+
+        class CatchException(BaseDownloaderMiddleware):
+
+            def __init__(self):
+                self.exceptions = []
+
+            def process_request(self, request):
+                return request
+
+            def process_response(self, response):
+                if isinstance(response, BaseDownloadException):
+                    self.exceptions.append(response)
+                    return None
+                return response
+
+        class MockCrawler(BaseCrawler):
+            def next_url(self, response):
+                return
+
+            def extract_items(self, response):
+                return
+
+        catch_exception_middleware = CatchException()
+        pomp = Pomp(
+            downloader=SimpleDownloader(middlewares=[catch_exception_middleware]),
+            pipelines=[],
+        )
+
+        MockCrawler.ENTRY_URL = [
+            'https://123.456.789.01:8081/fake_url',
+            '%s/root' % self.httpd.location,
+        ]
+
+        pomp.pump(MockCrawler())
+
+        assert_equal(len(catch_exception_middleware.exceptions), 1)

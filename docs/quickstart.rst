@@ -10,8 +10,8 @@ Pomp is fun to use, incredibly easy for basic applications.
 A Minimal Application
 ---------------------
 
-For a minimal application all you need is to define you crawler inherited 
-from :class:`BaseCrawler`::
+For a minimal application all you need is to define you crawler 
+by inherit :class:`BaseCrawler`::
 
     from pomp.core.base import BaseCrawler
     from pomp.contrib import SimpleDownloader

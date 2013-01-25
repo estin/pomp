@@ -27,6 +27,7 @@ by inherit :class:`BaseCrawler`::
         def next_url(self, response):
             return None # one page crawler, stop crawl
 
+
     if __name__ == '__main__':
         from pomp.core.engine import Pomp
 
@@ -35,3 +36,15 @@ by inherit :class:`BaseCrawler`::
         )
 
         pomp.pump(MyCrawler())
+
+
+Item pipelines
+--------------
+
+
+Custom downloader
+-----------------
+
+
+Downloader middleware
+---------------------

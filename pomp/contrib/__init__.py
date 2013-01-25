@@ -1,5 +1,10 @@
 """
-Standart downloaders
+Urllib
+``````
+
+Simple downloaders and middlewares for fetching urls by standard 
+`urlopen` function from `urllib` package for python3.x
+or `urllib2` for python2.7+
 """
 try:
     from urllib.request import urlopen, Request
@@ -18,13 +23,16 @@ log = logging.getLogger('pomp.contrib.urllib')
 
 
 class SimpleDownloader(BaseDownloader):
+    """Simplest downloader
+    
+    :param timeout: request timeout in seconds
+    """
 
-    TIMEOUT = 5
-
-    def __init__(self, *args, **kwargs):
-        super(SimpleDownloader, self).__init__(*args, **kwargs)
+    def __init__(self, timeout=5, middlewares=None):
+        super(SimpleDownloader, self).__init__(middlewares=middlewares)
         # insert urllib adpter middleware by default
         self.middlewares.insert(0, UrllibAdapterMiddleware())
+        self.timeout = timeout
 
     def get(self, requests):
         responses = []
@@ -33,9 +41,9 @@ class SimpleDownloader(BaseDownloader):
             responses.append(response)
         return responses
 
-    def _fetch(self, request, timeout=TIMEOUT):
+    def _fetch(self, request):
         try:
-            res = urlopen(request.url, timeout=timeout)
+            res = urlopen(request.url, timeout=self.timeout)
             return UrllibHttpResponse(request, res)
         except Exception as e:
             log.exception('Exception on %s', request)
@@ -43,16 +51,23 @@ class SimpleDownloader(BaseDownloader):
 
 
 class ThreadedDownloader(SimpleDownloader):
+    """Threaded downloader by `ThreadPool` from `multiprocessing.pool`
+    package.
 
-    def __init__(self, pool_size=5, *args, **kwargs):
+    :param pool_size: count of workers in pool
+    :param timeout: request timeout in seconds
+    """
+
+    def __init__(self, pool_size=5, timeout=5, middlewares=None):
         self.workers_pool = ThreadPool(processes=pool_size)
-        super(ThreadedDownloader, self).__init__(*args, **kwargs)
-    
+        super(ThreadedDownloader, self).__init__(middlewares=middlewares)
+
     def get(self, requests):
         return self.workers_pool.map(self._fetch, requests)
 
 
 class UrllibHttpRequest(BaseHttpRequest):
+    """Adapter for urllib request to :class:`pomp.core.base.BaseHttpRequest`""" 
 
     def __init__(self, url):
         self.request = url if isinstance(url, Request) else Request(url)
@@ -63,6 +78,7 @@ class UrllibHttpRequest(BaseHttpRequest):
 
 
 class UrllibHttpResponse(BaseHttpResponse):
+    """Adapter for urllib response to :class:`pomp.core.base.BaseHttpResponse`""" 
 
     def __init__(self, request, response):
         self.req = request
@@ -81,6 +97,9 @@ class UrllibHttpResponse(BaseHttpResponse):
 
 
 class UrllibAdapterMiddleware(BaseDownloaderMiddleware):
+    """Middlerware for adapting urllib.Request 
+    to :class:`pomp.core.base.BaseHttpRequest`
+    """
 
     def process_request(self, req):
         if isinstance(req, BaseHttpRequest):

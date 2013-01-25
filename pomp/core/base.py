@@ -1,11 +1,16 @@
 """
-Base classes
+Base class
+
+ .. note::
+
+    All this class must be overridden
 """
 CRAWL_DEPTH_FIRST_METHOD = 'depth'
 CRAWL_WIDTH_FIRST_METHOD = 'width'
 
+
 class BaseCrawler(object):
-    """Base crawler class.
+    """Crawler interface
 
     Crawler must resolve two main tasks:
 
@@ -27,10 +32,6 @@ class BaseCrawler(object):
 
     - ``depth first`` is pomp.core.base.CRAWL_DEPTH_FIRST_METHOD (default)
     - ``width first`` is pomp.core.base.CRAWL_WIDTH_FIRST_METHOD
-
-    .. note::
-
-        This class must be overridden
     """
     ENTRY_URL = None
     CRAWL_METHOD = CRAWL_DEPTH_FIRST_METHOD
@@ -63,7 +64,7 @@ class BaseCrawler(object):
 
 
 class BaseDownloader(object):
-    """Base downloader class.
+    """Downloader interface
      
     Downloader must resolve one main task - execute request 
     and fetch response.
@@ -116,38 +117,76 @@ class BaseDownloader(object):
             if response:
                 yield callback(crawler, response)
 
-    def get(self, url):
-        """Execute request
+    def get(self, requests):
+        """Execute requests
 
-        :param url: url or instance of :class:`BaseHttpRequest`
-        :rtype: instance of :class:`BaseHttpResponse` or 
+        :param requests: urls or instances of :class:`BaseHttpRequest`
+        :rtype: instances of :class:`BaseHttpResponse` or 
                 :class:`BaseDownloadException`
         """
         raise NotImplementedError()
 
 
 class BasePipeline(object):
+    """Pipeline interface
+
+    The main goals of pipe is:
+
+    - filter items
+    - change items
+    - store items
+    """ 
 
     def start(self):
+        """Initialize pipe
+
+        Open files and database connections etc.
+        
+        """
         pass
 
     def process(self, item):
+        """Process extracted item
+        
+        :param item: extracted item
+        :rtype: item or ``None`` if this item must be skipped
+        """
         raise NotImplementedError()
 
     def stop(self):
+        """Finalize pipe
+        
+        Close files and database connections etc.
+        """
         pass
 
 
 class BaseDownloaderMiddleware(object):
+    """Downloader middleware interface"""
 
     def porcess_request(self, request):
+        """Change request before it will be executed by downloader
+
+        :param request: instance of :class:`BaseHttpRequest`
+        :rtype: changed request or ``None`` to skip
+                execution of this request
+        """
         raise NotImplementedError()
  
     def porcess_response(self, response):
+        """Change response before it will be sent to crawler for exctracting
+        items
+
+        :param response: instance of :class:`BaseHttpResponse`
+                         or :class:`BaseDownloadException`
+        :rtype: changed response or ``None`` to skip
+                processing of this response
+        """ 
         raise NotImplementedError() 
 
 
 class BaseHttpRequest(object):
+    """Request interface"""
 
     def __init__(self, *args, **kwargs):
         for key, value in kwargs.items():
@@ -155,10 +194,12 @@ class BaseHttpRequest(object):
 
     @property
     def url(self):
+        """Requested URL"""
         raise NotImplementedError()
 
 
 class BaseHttpResponse(object):
+    """Response interface"""
 
     def __init__(self, *args, **kwargs):
         for key, value in kwargs.items():
@@ -166,14 +207,21 @@ class BaseHttpResponse(object):
 
     @property
     def request(self):
-        raise NotImplementedError() 
+        """Request :class:`BaseHttpRequest`"""
+        raise NotImplementedError()
 
     @property
     def response(self):
-        return self.req
+        """Response :class:`BaseHttpResponse`"""
+        raise NotImplementedError()
 
 
 class BaseDownloadException(Exception):
+    """Download exception interface
+    
+    :param request: request raises this exception
+    :param exception: original exception
+    """
 
     def __init__(self, request, exception):
         self.request = request

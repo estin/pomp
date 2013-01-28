@@ -10,6 +10,13 @@ Contrib
 .. automodule:: pomp.contrib
     :members: 
 
+Engine
+******
+
+.. automodule:: pomp.core.engine
+    :members:
+
+
 Interfaces
 **********
 

@@ -10,6 +10,17 @@ log = logging.getLogger('pomp.engine')
 
 
 class Pomp(object):
+    """Configuration object
+
+    Main goal of class is to glue together all parts of application:
+
+    - Downloader implementation with middlewares
+    - Item pipelines
+    - Crawler
+    
+    :param downloader: :class:`pomp.core.base.BaseDownloader`
+    :param pipelines: list of item pipelines :class:`pomp.core.base.BasePipeline`
+    """
 
     def __init__(self, downloader, pipelines=None):
 
@@ -39,6 +50,10 @@ class Pomp(object):
             return urls
 
     def pump(self, crawler):
+        """Start crawling
+        
+        :param crawler: crawler to execute :class:`pomp.core.base.BaseCrawler`
+        """
 
         log.info('Prepare downloader: %s', self.downloader)
         self.downloader.prepare()

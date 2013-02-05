@@ -43,7 +43,7 @@ class SimpleDownloader(BaseDownloader):
 
     def _fetch(self, request):
         try:
-            res = urlopen(request.url, timeout=self.timeout)
+            res = urlopen(request, timeout=self.timeout)
             return UrllibHttpResponse(request, res)
         except Exception as e:
             log.exception('Exception on %s', request)
@@ -66,11 +66,8 @@ class ThreadedDownloader(SimpleDownloader):
         return self.workers_pool.map(self._fetch, requests)
 
 
-class UrllibHttpRequest(BaseHttpRequest):
+class UrllibHttpRequest(Request, BaseHttpRequest):
     """Adapter for urllib request to :class:`pomp.core.base.BaseHttpRequest`""" 
-
-    def __init__(self, url):
-        self.request = url if isinstance(url, Request) else Request(url)
 
     @property
     def url(self):
@@ -104,7 +101,7 @@ class UrllibAdapterMiddleware(BaseDownloaderMiddleware):
     def process_request(self, req):
         if isinstance(req, BaseHttpRequest):
             return req
-        return UrllibHttpRequest(url=req)
+        return UrllibHttpRequest(req)
 
     def process_response(self, response):
         return response

@@ -90,7 +90,7 @@ class UrllibHttpResponse(BaseHttpResponse):
 
     @property
     def response(self):
-        return self.response 
+        return self.resp
 
 
 class UrllibAdapterMiddleware(BaseDownloaderMiddleware):

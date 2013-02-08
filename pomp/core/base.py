@@ -188,10 +188,6 @@ class BaseDownloaderMiddleware(object):
 class BaseHttpRequest(object):
     """Request interface"""
 
-    def __init__(self, *args, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-
     @property
     def url(self):
         """Requested URL"""
@@ -200,10 +196,6 @@ class BaseHttpRequest(object):
 
 class BaseHttpResponse(object):
     """Response interface"""
-
-    def __init__(self, *args, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
 
     @property
     def request(self):

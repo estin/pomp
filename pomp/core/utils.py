@@ -10,3 +10,10 @@ def iterator(var):
         return iter(var)
 
     return iter((var,))
+
+
+def isstring(obj):
+    try:
+        return isinstance(obj, basestring)
+    except NameError:
+        return isinstance(obj, str)

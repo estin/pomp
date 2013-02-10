@@ -7,3 +7,5 @@ syntax: glob
 dist/
 html_docs/
 docs/_build/
+build/
+*.csv

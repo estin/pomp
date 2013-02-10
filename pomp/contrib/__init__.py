@@ -71,7 +71,7 @@ class UrllibHttpRequest(Request, BaseHttpRequest):
 
     @property
     def url(self):
-        return self.request.get_full_url()
+        return self.get_full_url()
 
 
 class UrllibHttpResponse(BaseHttpResponse):

@@ -9,8 +9,8 @@ def test_item():
         f3 = Field()
 
     i = TItem()
-    assert_equal(['f1', 'f2', 'f3'], i.keys())
+    assert_equal(['f1', 'f2', 'f3'], list(i.keys()))
 
     i.f1 = 1
     i.f3 = 3
-    assert_equal([1, None, 3], i.values())
+    assert_equal([1, None, 3], list(i.values()))

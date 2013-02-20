@@ -39,7 +39,7 @@ class CsvPipeline(BasePipeline):
             self.csvfile, *self._csv_args, **self._csv_kwargs
         )
 
-    def process(self, item):
+    def process(self, crawler, item):
         self.writer.writerow(list(item.values()))
         return item
 

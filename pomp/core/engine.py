@@ -32,9 +32,12 @@ class Pomp(object):
         log.info('Process %s', response)
         items = crawler.process(response)
 
+
         if items:
             for pipe in self.pipelines:
-                items = filter(None, list(map(pipe.process, items)))
+                items = filter(None, list(
+                    map(lambda i: pipe.process(crawler, i), items)
+                ))
 
         urls = crawler.next_url(response)
         if crawler.is_depth_first:

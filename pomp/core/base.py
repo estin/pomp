@@ -145,9 +145,10 @@ class BasePipeline(object):
         """
         pass
 
-    def process(self, item):
+    def process(self, crawler, item):
         """Process extracted item
-        
+
+        :param crawler: crawler who extract items
         :param item: extracted item
         :rtype: item or ``None`` if this item must be skipped
         """

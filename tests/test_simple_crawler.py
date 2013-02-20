@@ -92,7 +92,7 @@ class TestSimplerCrawler(object):
             def __init__(self):
                 self.collection = []
 
-            def process(self, item):
+            def process(self, crawler, item):
                 self.collection.append(item)
                 return item
 
@@ -135,13 +135,13 @@ class TestSimplerCrawler(object):
 
         class IncPipeline(BasePipeline):
 
-            def process(self, item):
+            def process(self, crawler, item):
                 item.value += 1
                 return item
 
         class FilterPipeline(BasePipeline):
 
-            def process(self, item):
+            def process(self, crawler, item):
                 if 'trash' in item.url:
                     return None
                 return item
@@ -151,7 +151,7 @@ class TestSimplerCrawler(object):
             def __init__(self, collection):
                 self.collection = collection
 
-            def process(self, item):
+            def process(self, crawler, item):
                 self.collection.append(item)
                 return item
 

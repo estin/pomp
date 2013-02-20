@@ -39,7 +39,7 @@ class TestContribPipelines(object):
             item.field2 = 'f2'
 
             # pipeline item
-            pipe.process(item)
+            pipe.process(None, item)
 
             # close files
             pipe.stop()

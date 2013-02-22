@@ -5,6 +5,9 @@ Base class
 
     All this class must be overridden
 """
+import defer
+
+
 CRAWL_DEPTH_FIRST_METHOD = 'depth'
 CRAWL_WIDTH_FIRST_METHOD = 'width'
 
@@ -36,6 +39,9 @@ class BaseCrawler(object):
     ENTRY_URL = None
     CRAWL_METHOD = CRAWL_DEPTH_FIRST_METHOD
 
+    def __init__(self):
+        self._in_process = 0
+
     def next_url(self, page):
         """Getting next urls for processing.
  
@@ -58,9 +64,17 @@ class BaseCrawler(object):
         """    
         raise NotImplementedError()
 
-    @property
     def is_depth_first(self):
         return self.CRAWL_METHOD == CRAWL_DEPTH_FIRST_METHOD
+
+    def dive(self, value=1):
+        self._in_process += value
+
+    def _reset_state(self):
+        self._in_process = 0
+
+    def in_process(self):
+        return self._in_process != 0
 
 
 class BaseDownloader(object):
@@ -83,10 +97,55 @@ class BaseDownloader(object):
         self.response_middlewares.reverse()
 
     def process(self, urls, callback, crawler):
+        return list(self._lazy_process_async(urls, callback, crawler))
+
+    def _lazy_process_async(self, urls, callback, crawler):
+        if not urls:
+            return
+
+        requests = []
+        for request in urls:
+
+            for middleware in self.request_middlewares:
+                request = middleware.process_request(request)
+                if not request:
+                    break
+
+            if not request:
+                continue
+
+            requests.append(request)
+
+        if not requests:
+            return
+
+        def _process_resp(response):
+            for middleware in self.response_middlewares:
+                response = middleware.process_response(response)
+                if not response:
+                    break
+
+            if response:
+                return callback(crawler, response)
+
+        crawler.dive(len(requests)) # dive in
+        for response in self.get(requests):
+            if isinstance(response, defer.Deferred): # async behavior
+                def _(res):
+                    crawler.dive(-1) # dive out
+                    return res
+                response.add_callback(_)
+                response.add_callback(_process_resp)
+                yield response
+            else: # sync behavior
+                crawler.dive(-1) # dive out
+                yield _process_resp(response)
+
+    def process_sync(self, urls, callback, crawler):
         # start downloading and processing
         return list(self._lazy_process(urls, callback, crawler))
 
-    def _lazy_process(self, urls, callback, crawler):
+    def _lazy_process_sync(self, urls, callback, crawler):
 
         if not urls:
             return

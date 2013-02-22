@@ -25,6 +25,7 @@ setup(
     tests_require=['nose >= 1.0',],
     test_suite='nose.collector',
     setup_requires=['versiontools >= 1.8',],
+    install_requires=['defer',],
     classifiers=[
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',

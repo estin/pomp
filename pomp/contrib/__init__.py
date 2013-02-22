@@ -11,9 +11,9 @@ try:
 except ImportError:
     from urllib2 import urlopen, Request
 
-
 import logging
 from multiprocessing.pool import ThreadPool
+
 from pomp.core.base import BaseDownloader, BaseHttpRequest, \
     BaseHttpResponse, BaseDownloaderMiddleware, BaseDownloadException
 from pomp.core.utils import iterator

@@ -3,7 +3,10 @@ Engine
 """
 import logging
 import itertools
-from pomp.core.utils import iterator
+
+import defer
+
+from pomp.core.utils import iterator, DeferredList
 
 
 log = logging.getLogger('pomp.engine')
@@ -32,7 +35,6 @@ class Pomp(object):
         log.info('Process %s', response)
         items = crawler.process(response)
 
-
         if items:
             for pipe in self.pipelines:
                 items = filter(None, list(
@@ -40,13 +42,16 @@ class Pomp(object):
                 ))
 
         urls = crawler.next_url(response)
-        if crawler.is_depth_first:
+        if crawler.is_depth_first():
             if urls:
                 self.downloader.process(
                     iterator(urls),
                     self.response_callback,
                     crawler
                 )
+            else:
+                if not self.stoped and not crawler.in_process():
+                    self._stop(crawler)
 
             return None # end of recursion
         else:
@@ -61,42 +66,57 @@ class Pomp(object):
         log.info('Prepare downloader: %s', self.downloader)
         self.downloader.prepare()
 
+        self.stoped = False
+        crawler._reset_state()
+
         log.info('Start crawler: %s', crawler)
 
         for pipe in self.pipelines:
             log.info('Start pipe: %s', pipe)
             pipe.start()
 
-        try:
-            next_urls = self.downloader.process(
-                iterator(crawler.ENTRY_URL),
+        self.stop_deferred = defer.Deferred()
+
+        next_urls = self.downloader.process(
+            iterator(crawler.ENTRY_URL),
+            self.response_callback,
+            crawler
+        )
+
+        if not crawler.is_depth_first():
+            self._call_next_urls(next_urls, crawler)
+        return self.stop_deferred
+
+    def _call_next_urls(self, next_urls, crawler):
+        deferreds = [n for n in next_urls if n and isinstance(n, defer.Deferred)]
+        if deferreds: # async behavior
+            d = DeferredList(deferreds)
+            d.add_callback(self._on_next_urls, crawler)
+        else: # sync behavior
+            self._on_next_urls(next_urls, crawler)
+
+    def _on_next_urls(self, next_urls, crawler):
+        for urls in next_urls:
+
+            if not urls:
+                continue
+
+            _urls = self.downloader.process(
+                iterator(urls),
                 self.response_callback,
                 crawler
             )
 
-            if not crawler.is_depth_first:
-                while True:
-                    if not next_urls:
-                        break
-                    _urls = ()
-                    for urls in next_urls:
-                        if not urls:
-                            continue
-                        _urls = itertools.chain(
-                            _urls,
-                            self.downloader.process(
-                                iterator(urls),
-                                self.response_callback,
-                                crawler
-                            )
-                        )
-                    next_urls = _urls
+            self._call_next_urls(_urls, crawler)
 
-        finally:
+        if not self.stoped and not crawler.in_process():
+            self._stop(crawler)
 
-            for pipe in self.pipelines:
-                log.info('Stop pipe: %s', pipe)
-                pipe.stop() 
-
+    def _stop(self, crawler):
+        self.stoped = True
+        for pipe in self.pipelines:
+            log.info('Stop pipe: %s', pipe)
+            pipe.stop()
 
         log.info('Stop crawler: %s', crawler)
+        self.stop_deferred.callback(None) 

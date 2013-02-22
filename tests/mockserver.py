@@ -9,6 +9,7 @@ logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger('mockserver')
 
 
+# TODO silent server
 def simple_app(environ, start_response):
     setup_testing_defaults(environ)
 
@@ -90,3 +91,4 @@ class HttpServer(object):
         log.debug('Stop http server: %s', self)
         self.process.terminate()
         self.process.join()
+        self.httpd.server_close()

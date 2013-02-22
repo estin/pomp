@@ -74,7 +74,6 @@ class TestContribUrllib(object):
             set(self.httpd.sitemap.keys())
         )
 
-
     def test_exception_handling(self):
 
         class CatchException(BaseDownloaderMiddleware):

@@ -4,21 +4,18 @@ Twisted
 
 Simple downloaders and middlewares for fetching urls by Twisted.
 """
-
-
+import urllib
 import logging
 import defer as dfr
-
-from pomp.core.base import BaseDownloader, BaseHttpRequest, \
-    BaseHttpResponse
-from pomp.core.utils import iterator
 
 from twisted.internet import defer, protocol
 from twisted.web.client import Agent
 from twisted.web.iweb import IBodyProducer
 from zope.interface import implements
-from twisted.web.http_headers import Headers
-import urllib
+from twisted.web.http_headers import Headers 
+
+from pomp.core.base import BaseDownloader, BaseHttpRequest, BaseHttpResponse
+from pomp.core.utils import iterator
 
 
 log = logging.getLogger('pomp.contrib.twisted')

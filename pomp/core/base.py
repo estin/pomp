@@ -68,6 +68,7 @@ class BaseCrawler(object):
         return self.CRAWL_METHOD == CRAWL_DEPTH_FIRST_METHOD
 
     def dive(self, value=1):
+        # TODO must be wrapped by `lock`
         self._in_process += value
 
     def _reset_state(self):

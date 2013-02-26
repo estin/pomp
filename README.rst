@@ -1,13 +1,23 @@
-pomp_
-=====
+pomp
+====
 
-pomp_ is a Screen scraping and web crawling framework. Like Scrapy, but more simple.
+pomp is a Screen scraping and web crawling framework. Like `Scrapy`_, but more simple.
 
 Features:
 
 * One file applications
-* Engines - threaded, greenlet/gevent, twisted, tornado etc.
+* Engines - threaded, greenlet/gevent, Twisted, Tornado etc.
 
-pomp_ is `inspired by Scrapy`_ but simpler implementation and without hard twisted dependency.
+pomp is inspired by `Scrapy`_ but simpler implementation and without hard `Twisted`_ dependency.
 
-pomp_ is written and maintained by `Evgeniy Tatarkin`_ and is licensed under BSD license.
+Roadmap:
+
+* `gevent`_ support
+* `Tornado`_ support
+
+Pomp is written and maintained by Evgeniy Tatarkin and is licensed under BSD license.
+
+.. _Scrapy: http://scrapy.org/
+.. _Twisted: http://twistedmatrix.com/
+.. _gevent:  http://www.gevent.org/
+.. _Tornado:  http://www.gevent.org/

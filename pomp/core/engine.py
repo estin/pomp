@@ -73,7 +73,7 @@ class Pomp(object):
 
         for pipe in self.pipelines:
             log.info('Start pipe: %s', pipe)
-            pipe.start()
+            pipe.start(crawler)
 
         self.stop_deferred = defer.Deferred()
 
@@ -116,7 +116,7 @@ class Pomp(object):
         self.stoped = True
         for pipe in self.pipelines:
             log.info('Stop pipe: %s', pipe)
-            pipe.stop()
+            pipe.stop(crawler)
 
         log.info('Stop crawler: %s', crawler)
         self.stop_deferred.callback(None) 

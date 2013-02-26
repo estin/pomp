@@ -32,7 +32,7 @@ class TestContribPipelines(object):
             )
             
             # prepare pipe
-            pipe.start()
+            pipe.start(None)
 
             item = DummyItem(field4='f4')
             item.field1 = 'f1'
@@ -42,7 +42,7 @@ class TestContribPipelines(object):
             pipe.process(None, item)
 
             # close files
-            pipe.stop()
+            pipe.stop(None)
 
             # check content
             csvfile.flush()

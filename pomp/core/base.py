@@ -161,11 +161,12 @@ class BasePipeline(object):
     - store items
     """ 
 
-    def start(self):
+    def start(self, crawler):
         """Initialize pipe
-
+        
         Open files and database connections etc.
         
+        :param crawler: crawler who extract items
         """
         pass
 
@@ -178,10 +179,12 @@ class BasePipeline(object):
         """
         raise NotImplementedError()
 
-    def stop(self):
+    def stop(self, crawler):
         """Finalize pipe
         
         Close files and database connections etc.
+        
+        :param crawler: crawler who extract items
         """
         pass
 

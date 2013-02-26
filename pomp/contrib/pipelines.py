@@ -28,7 +28,7 @@ class CsvPipeline(BasePipeline):
         self._need_close = False
 
 
-    def start(self):
+    def start(self, crawler):
         if isstring(self.output_file):
             self.csvfile = open(self.output_file, 'a', newline='')
             self._need_close = True
@@ -43,6 +43,6 @@ class CsvPipeline(BasePipeline):
         self.writer.writerow(list(item.values()))
         return item
 
-    def stop(self):
+    def stop(self, crawler):
         if self._need_close:
             self.csvfile.close()

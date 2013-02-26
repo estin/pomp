@@ -141,41 +141,6 @@ class BaseDownloader(object):
                 crawler.dive(-1) # dive out
                 yield _process_resp(response)
 
-    def process_sync(self, urls, callback, crawler):
-        # start downloading and processing
-        return list(self._lazy_process(urls, callback, crawler))
-
-    def _lazy_process_sync(self, urls, callback, crawler):
-
-        if not urls:
-            return
-
-        requests = []
-        for request in urls:
-
-            for middleware in self.request_middlewares:
-                request = middleware.process_request(request)
-                if not request:
-                    break
-
-            if not request:
-                continue
-
-            requests.append(request)
-
-        if not requests:
-            return
-
-        for response in self.get(requests):
-
-            for middleware in self.response_middlewares:
-                response = middleware.process_response(response)
-                if not response:
-                    break
-
-            if response:
-                yield callback(crawler, response)
-
     def get(self, requests):
         """Execute requests
 

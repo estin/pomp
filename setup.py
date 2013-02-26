@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-
-try:
-    from setuptools import setup, find_packages
-except ImportError:
-    from distutils.core import setup, find_packages
+from setuptools import setup, find_packages
 
 
 here = os.path.dirname(os.path.abspath(__file__))

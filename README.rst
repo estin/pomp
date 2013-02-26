@@ -20,4 +20,4 @@ Pomp is written and maintained by Evgeniy Tatarkin and is licensed under BSD lic
 .. _Scrapy: http://scrapy.org/
 .. _Twisted: http://twistedmatrix.com/
 .. _gevent:  http://www.gevent.org/
-.. _Tornado:  http://www.gevent.org/
+.. _Tornado:  http://www.tornadoweb.org/

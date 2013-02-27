@@ -5,6 +5,7 @@ Simple pipelines
 Simple pipelines
 """ 
 import csv
+import codecs
 from pomp.core.base import BasePipeline
 from pomp.core.utils import isstring
 
@@ -30,7 +31,7 @@ class CsvPipeline(BasePipeline):
 
     def start(self, crawler):
         if isstring(self.output_file):
-            self.csvfile = open(self.output_file, 'a', newline='')
+            self.csvfile = codecs.open(self.output_file, 'w', encoding='utf-8')
             self._need_close = True
         else:
             self.csvfile = self.output_file

@@ -1,3 +1,6 @@
- * Add documentation
- * Twisted support
+ * lock in pomp.dive incrementing _in_process variable
+ * plain threads support and async behavior
+ * twistedtools - exceptions, post requests etc.
+ * gevent support
+ * tornado support
  * GAE support

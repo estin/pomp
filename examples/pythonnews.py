@@ -38,7 +38,7 @@ class PythonNewsCrawler(BaseCrawler):
 
 class PrintPipeline(BasePipeline):
 
-    def process(self, item):
+    def process(self, crawler, item):
         print(item)
 
 

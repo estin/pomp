@@ -14,7 +14,8 @@ from twisted.web.iweb import IBodyProducer
 from zope.interface import implements
 from twisted.web.http_headers import Headers 
 
-from pomp.core.base import BaseDownloader, BaseHttpRequest, BaseHttpResponse
+from pomp.core.base import BaseDownloader, BaseHttpRequest, BaseHttpResponse, \
+    BaseDownloadException 
 from pomp.core.utils import iterator
 
 
@@ -45,23 +46,30 @@ class TwistedDownloader(BaseDownloader):
 
         d.addCallback(self._handle_response)
 
+        # deferred result of tiwsted request processing
         res = dfr.Deferred()
 
         # connect twised with pomp engine
-        # TODO error_backs
         def _fire(response):
             res.callback(TwistedHttpResponse(request, response))
         d.addCallback(_fire)
 
+        # errors
+        def _fire_error(failure):
+            try:
+                failure.raiseException()
+            except Exception as e:
+                log.exception('Exception on %s', request)
+                res.callback(BaseDownloadException(request, exception=e))
+        d.addErrback(_fire_error)
+
         return res
 
     def _handle_response(self, response):
-        if response.code == 204:
-            d = defer.succeed('')
-        else:
-            d = defer.Deferred()
-            response.deliverBody(SimpleReceiver(d))
+        d = defer.Deferred()
+        response.deliverBody(SimpleReceiver(d))
         return d
+
 
 
 class TwistedHttpRequest(BaseHttpRequest):
@@ -75,6 +83,9 @@ class TwistedHttpRequest(BaseHttpRequest):
     @property
     def url(self):
         return self._url
+
+    def __str__(self):
+        return 'Request({0}): {1}'.format(self.method, self.url)
 
 
 class TwistedHttpResponse(BaseHttpResponse):

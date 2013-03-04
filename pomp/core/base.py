@@ -5,11 +5,16 @@ Base class
 
     All this class must be overridden
 """
+import logging
+
 import defer
 
 
 CRAWL_DEPTH_FIRST_METHOD = 'depth'
 CRAWL_WIDTH_FIRST_METHOD = 'width'
+
+
+log = logging.getLogger('pomp.contrib.core')
 
 
 class BaseCrawler(object):
@@ -108,7 +113,15 @@ class BaseDownloader(object):
         for request in urls:
 
             for middleware in self.request_middlewares:
-                request = middleware.process_request(request)
+                try:
+                    request = middleware.process_request(request)
+                except Exception as e:
+                    log.exception('Exception on process %s by %s',
+                        request, middleware)
+                    request = None # stop processing request by middlewares
+                    self._process_exception(
+                        BaseDownloadException(request, exception=e)
+                    )
                 if not request:
                     break
 
@@ -121,12 +134,22 @@ class BaseDownloader(object):
             return
 
         def _process_resp(response):
+            is_error = isinstance(response, BaseDownloadException)
+            func = 'process_response' if not is_error else 'process_exception'
             for middleware in self.response_middlewares:
-                response = middleware.process_response(response)
+                try:
+                    response = getattr(middleware, func)(response)
+                except Exception as e:
+                    log.exception('Exception on process %s by %s',
+                        response, middleware)
+                    response = None # stop processing response by middlewares
+                    self._process_exception(
+                        BaseDownloadException(response, exception=e)
+                    )
                 if not response:
                     break
 
-            if response:
+            if response and not is_error:
                 return callback(crawler, response)
 
         crawler.dive(len(requests)) # dive in
@@ -141,6 +164,16 @@ class BaseDownloader(object):
             else: # sync behavior
                 crawler.dive(-1) # dive out
                 yield _process_resp(response)
+
+    def _process_exception(self, exception):
+        for middleware in self.response_middlewares:
+            try:
+                value = middleware.process_exception(exception)
+            except Exception:
+                log.exception('Exception on prcess %s by %s',
+                    exception, middleware)
+            if not value: # stop processing exception
+                break
 
     def get(self, requests):
         """Execute requests
@@ -193,25 +226,33 @@ class BasePipeline(object):
 class BaseDownloaderMiddleware(object):
     """Downloader middleware interface"""
 
-    def porcess_request(self, request):
+    def process_request(self, request):
         """Change request before it will be executed by downloader
 
         :param request: instance of :class:`BaseHttpRequest`
         :rtype: changed request or ``None`` to skip
                 execution of this request
         """
-        raise NotImplementedError()
+        return request
  
-    def porcess_response(self, response):
+    def process_response(self, response):
         """Change response before it will be sent to crawler for exctracting
         items
 
         :param response: instance of :class:`BaseHttpResponse`
-                         or :class:`BaseDownloadException`
         :rtype: changed response or ``None`` to skip
                 processing of this response
         """ 
-        raise NotImplementedError() 
+        return response
+
+    def process_exception(self, exception):
+        """Handle exception raised in downloading process
+
+        :param exception: instance of :class:`BaseDownloadException`
+        :rtype: changed response or ``None`` to skip
+                processing of this response
+        """ 
+        return exception
 
 
 class BaseHttpRequest(object):

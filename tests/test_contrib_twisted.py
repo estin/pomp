@@ -9,7 +9,8 @@ try:
 except ImportError:
     raise SkipTest('twisted not installed')
 
-from pomp.core.base import BaseCrawler, BaseDownloaderMiddleware, BasePipeline
+from pomp.core.base import BaseCrawler, BaseDownloaderMiddleware, \
+    BasePipeline, BaseDownloadException
 from pomp.core.engine import Pomp
 from pomp.contrib.twistedtools import TwistedDownloader, TwistedHttpRequest
 from pomp.core.base import CRAWL_WIDTH_FIRST_METHOD
@@ -49,11 +50,9 @@ class DummyCrawler(BaseCrawler):
 class RequestResponseMiddleware(BaseDownloaderMiddleware):
 
     def __init__(self, prefix_url=None):
-        self.requested_urls = []
         self.prefix_url = prefix_url
     
     def process_request(self, url):
-        self.requested_urls.append(url)
         url = '%s%s' % (self.prefix_url, url) \
             if self.prefix_url else url
         return TwistedHttpRequest(url)
@@ -61,6 +60,26 @@ class RequestResponseMiddleware(BaseDownloaderMiddleware):
     def process_response(self, response):
         response.body = json.loads(response.body.decode('utf-8'))
         return response
+
+
+class CollectRequestResponseMiddleware(BaseDownloaderMiddleware):
+
+    def __init__(self, prefix_url=None):
+        self.requests = []
+        self.responses = []
+        self.exceptions = []
+
+    def process_request(self, request):
+        self.requests.append(request)
+        return request
+
+    def process_response(self, response):
+        self.responses.append(response)
+        return response
+    
+    def process_exception(self, exception):
+        self.exceptions.append(exception)
+        return exception
 
 
 class PrintPipeline(BasePipeline):
@@ -84,10 +103,11 @@ class TestContribTiwsted(object):
     @deferred(timeout=1.0)
     def test_downloader(self):
 
-        req_resp_midlleware = RequestResponseMiddleware(prefix_url=self.httpd.location)
-        downloader = TwistedDownloader(reactor)
+        req_resp_middleware = RequestResponseMiddleware(prefix_url=self.httpd.location)
+        collect_middleware = CollectRequestResponseMiddleware()
+        downloader = TwistedDownloader(reactor, middlewares=[collect_middleware])
 
-        downloader.middlewares.insert(0, req_resp_midlleware)
+        downloader.middlewares.insert(0, req_resp_middleware)
 
         pomp = Pomp(
             downloader=downloader,
@@ -103,9 +123,41 @@ class TestContribTiwsted(object):
 
         def check(x):
             assert_set_equal(
-                set(req_resp_midlleware.requested_urls),
+                set([r.url.replace(self.httpd.location, '') \
+                    for r in  collect_middleware.requests]),
                 set(self.httpd.sitemap.keys())
             )
 
         done_defer.addCallback(check)
         return done_defer
+
+    @deferred(timeout=1.0)
+    def test_exceptions(self):
+
+        req_resp_midlleware = RequestResponseMiddleware(prefix_url='ivalid url')
+        collect_middleware = CollectRequestResponseMiddleware()
+
+        downloader = TwistedDownloader(reactor, middlewares=[collect_middleware])
+
+        downloader.middlewares.insert(0, req_resp_midlleware)
+
+        pomp = Pomp(
+            downloader=downloader,
+            pipelines=[PrintPipeline()],
+        )
+
+        DummyCrawler.ENTRY_URL = '/root'
+
+        done_defer = defer.Deferred()
+        d = pomp.pump(DummyCrawler())
+
+        d.add_callback(done_defer.callback)
+        #d.add_callback(done_defer.callback)
+
+        def check(x):
+            assert len(collect_middleware.exceptions) == 1
+            assert isinstance(collect_middleware.exceptions[0], 
+                BaseDownloadException)
+
+        done_defer.addCallback(check)
+        return done_defer 

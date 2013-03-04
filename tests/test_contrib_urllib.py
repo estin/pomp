@@ -1,8 +1,7 @@
 import json
 import logging
 from nose.tools import assert_set_equal, assert_equal
-from pomp.core.base import BaseCrawler, BaseDownloaderMiddleware, \
-    BaseDownloadException
+from pomp.core.base import BaseCrawler, BaseDownloaderMiddleware
 from pomp.core.engine import Pomp
 from pomp.contrib import SimpleDownloader, ThreadedDownloader
 from pomp.core.base import CRAWL_WIDTH_FIRST_METHOD
@@ -81,14 +80,9 @@ class TestContribUrllib(object):
             def __init__(self):
                 self.exceptions = []
 
-            def process_request(self, request):
-                return request
-
-            def process_response(self, response):
-                if isinstance(response, BaseDownloadException):
-                    self.exceptions.append(response)
-                    return None
-                return response
+            def process_exception(self, exception):
+                self.exceptions.append(exception)
+                return exception
 
         class MockCrawler(BaseCrawler):
             def next_url(self, response):

@@ -12,6 +12,7 @@ Release date to be decided.
 - async support
 - Twisted support
 - pipelines accept crawler on start/stop/process calls
+- downloader middleware also process exception
 
 
 Version 0.0.2

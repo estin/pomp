@@ -161,3 +161,38 @@ class TestContribTiwsted(object):
 
         done_defer.addCallback(check)
         return done_defer 
+
+
+    @deferred(timeout=1.0)
+    def test_timeout(self):
+
+        req_resp_midlleware = RequestResponseMiddleware(prefix_url=self.httpd.location)
+        collect_middleware = CollectRequestResponseMiddleware()
+
+        downloader = TwistedDownloader(reactor,
+            timeout=0.5,
+            middlewares=[collect_middleware]
+        )
+
+        downloader.middlewares.insert(0, req_resp_midlleware)
+
+        pomp = Pomp(
+            downloader=downloader,
+            pipelines=[PrintPipeline()],
+        )
+
+        DummyCrawler.ENTRY_URL = '/sleep'
+
+        done_defer = defer.Deferred()
+        d = pomp.pump(DummyCrawler())
+
+        d.add_callback(done_defer.callback)
+
+        def check(x):
+            assert len(collect_middleware.exceptions) == 1
+            e = collect_middleware.exceptions[0]
+            assert isinstance(e, BaseDownloadException)
+            assert isinstance(e.exception, defer.CancelledError)
+
+        done_defer.addCallback(check)
+        return done_defer

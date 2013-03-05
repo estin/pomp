@@ -1,3 +1,4 @@
+import time
 import json
 import logging
 import multiprocessing
@@ -22,6 +23,7 @@ def simple_app(environ, start_response):
            for key, value in environ.iteritems()]
     return ret
 
+
 def sitemap_app(environ, start_response):
     #setup_testing_defaults(environ)
 
@@ -31,7 +33,11 @@ def sitemap_app(environ, start_response):
     start_response(status, headers)
 
     requested_url = environ['PATH_INFO']
-    response = sitemap_app.sitemap.get(requested_url)
+    if requested_url == '/sleep':
+        time.sleep(2)
+        response = 'Done'
+    else:
+        response = sitemap_app.sitemap.get(requested_url)
     log.debug('Requested url: %s, response: %s', requested_url, response)
     ret = [response.encode('utf-8')]
     return ret 

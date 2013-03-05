@@ -24,10 +24,11 @@ log = logging.getLogger('pomp.contrib.twisted')
 
 class TwistedDownloader(BaseDownloader):
 
-    def __init__(self, reactor, middlewares=None):
+    def __init__(self, reactor, timeout=5, middlewares=None):
         super(TwistedDownloader, self).__init__(middlewares=middlewares)
         self.reactor = reactor
         self.agent = Agent(self.reactor)
+        self.timeout = timeout
 
     def get(self, requests):
         responses = []
@@ -43,6 +44,15 @@ class TwistedDownloader(BaseDownloader):
             request.headers,
             request.data
         )
+
+        # Set timeout to request
+        # on timeout will be errorBack with CancelledError
+        watchdog = self.reactor.callLater(self.timeout, d.cancel)
+        def _reset_timeout(res):
+            if watchdog.active():
+                watchdog.cancel()
+            return res
+        d.addBoth(_reset_timeout)
 
         d.addCallback(self._handle_response)
 
@@ -69,7 +79,6 @@ class TwistedDownloader(BaseDownloader):
         d = defer.Deferred()
         response.deliverBody(SimpleReceiver(d))
         return d
-
 
 
 class TwistedHttpRequest(BaseHttpRequest):

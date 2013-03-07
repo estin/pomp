@@ -1,47 +1,13 @@
 import logging
 from nose.tools import assert_equal
-from pomp.core.base import BaseCrawler, BaseDownloader
-from pomp.core.base import BaseDownloaderMiddleware, BaseHttpResponse
+from pomp.core.base import BaseDownloaderMiddleware
 
 from pomp.core.engine import Pomp
 
+from tools import DummyDownloader, DummyCrawler
+
 
 logging.basicConfig(level=logging.DEBUG)
-
-
-class DummyCrawler(BaseCrawler):
-    ENTRY_URL = (
-        "http://python.org/1",
-    )
-
-    def next_url(self, response):
-        pass
-
-    def extract_items(self, response):
-        return []
-
-
-class DummyDownloader(BaseDownloader):
-
-    def get(self, requests):
-        for request in requests:
-            response = DummyResponse(request, 'some html code')
-            yield response 
-
-
-class DummyResponse(BaseHttpResponse):
-    
-    def __init__(self, request, response):
-        self.req = request
-        self.resp = response
-
-    @property
-    def request(self):
-        return self.req
-
-    @property
-    def response(self):
-        return self.response 
 
 
 class RaiseOnRequestMiddleware(BaseDownloaderMiddleware):

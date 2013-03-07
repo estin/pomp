@@ -1,30 +1,31 @@
 import logging
 from nose.tools import assert_equal
-from pomp.core.base import BaseCrawler, BaseDownloader, BasePipeline, \
-    BaseDownloaderMiddleware, BaseHttpRequest, BaseHttpResponse
+from pomp.core.base import BasePipeline
 from pomp.core.base import CRAWL_WIDTH_FIRST_METHOD
 from pomp.core.engine import Pomp
-from pomp.core.item import Item, Field
+
+
+from tools import DummyCrawler, DummyDownloader, DummyRequest
+from tools import RequestResponseMiddleware
 
 
 logging.basicConfig(level=logging.DEBUG)
 
-class DummyItem(Item):
-    value = Field()
-    url = Field()
 
-    def __repr__(self):
-        return '<DummyItem(%s, %s)>' % (self.url, self.value)
+url_to_request_middl = RequestResponseMiddleware(
+    request_factory=DummyRequest,
+    bodyjson=False
+)
 
 
-class DummyCrawler(BaseCrawler):
+class Crawler(DummyCrawler):
     ENTRY_URL = (
         "http://python.org/1",
         "http://python.org/2"
     )
 
     def __init__(self):
-        super(DummyCrawler, self).__init__()
+        super(Crawler, self).__init__()
         self.crawled_urls = []
 
     def next_url(self, response):
@@ -32,56 +33,6 @@ class DummyCrawler(BaseCrawler):
         result = url if url not in self.crawled_urls else None
         self.crawled_urls.append(url)
         return result
-
-    def extract_items(self, response):
-        item = DummyItem()
-        item.value = 1
-        item.url = response.request.url
-        yield item
-
-
-class DummyDownloader(BaseDownloader):
-
-    def get(self, requests):
-        for request in requests:
-            response = DummyResponse(request, 'some html code')
-            yield response
-
-
-class DummyRequest(BaseHttpRequest):
-
-    def __init__(self, url):
-        self.request = url
-
-    @property
-    def url(self):
-        return self.request
-
-
-class DummyResponse(BaseHttpResponse):
-    
-    def __init__(self, request, response):
-        self.req = request
-        self.resp = response
-
-    @property
-    def request(self):
-        return self.req
-
-    @property
-    def response(self):
-        return self.response
-
-
-class UrlToRequestMiddleware(BaseDownloaderMiddleware):
-
-    def process_request(self, req):
-        if isinstance(req, BaseHttpRequest):
-            return req
-        return DummyRequest(url=req)
-
-    def process_response(self, response):
-        return response
 
 
 class TestSimplerCrawler(object):
@@ -102,14 +53,14 @@ class TestSimplerCrawler(object):
         road = RoadPipeline()
 
         pomp = Pomp(
-            downloader=DummyDownloader(middlewares=[UrlToRequestMiddleware()]),
+            downloader=DummyDownloader(middlewares=[url_to_request_middl]),
             pipelines=[
                 road,
             ],
         )
 
         # Depth first method
-        pomp.pump(DummyCrawler())
+        pomp.pump(Crawler())
 
         assert_equal(set([item.url for item in road.collection]), set([
             'http://python.org/1',
@@ -120,7 +71,7 @@ class TestSimplerCrawler(object):
         # Width first method
         road.reset()
 
-        class DummyWidthCrawler(DummyCrawler):
+        class DummyWidthCrawler(Crawler):
             CRAWL_METHOD = CRAWL_WIDTH_FIRST_METHOD
 
         pomp.pump(DummyWidthCrawler())
@@ -158,7 +109,7 @@ class TestSimplerCrawler(object):
         result = []
 
         pomp = Pomp(
-            downloader=DummyDownloader(middlewares=[UrlToRequestMiddleware()]),
+            downloader=DummyDownloader(middlewares=[url_to_request_middl]),
             pipelines=[
                 IncPipeline(),
                 FilterPipeline(),
@@ -166,10 +117,9 @@ class TestSimplerCrawler(object):
             ],
         )
 
-        pomp.pump(DummyCrawler())
+        pomp.pump(Crawler())
 
         assert_equal([(item.url, item.value) for item in result], [
             ('http://python.org/1', 2),
             ('http://python.org/2', 2),
         ])
-

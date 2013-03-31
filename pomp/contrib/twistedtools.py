@@ -1,8 +1,5 @@
 """
-Twisted
-```````
-
-Simple downloaders and middlewares for fetching urls by Twisted.
+Simple downloaders and middlewares for fetching data by Twisted.
 """
 import urllib
 import logging
@@ -12,7 +9,7 @@ from twisted.internet import defer, protocol
 from twisted.web.client import Agent
 from twisted.web.iweb import IBodyProducer
 from zope.interface import implements
-from twisted.web.http_headers import Headers 
+from twisted.web.http_headers import Headers
 
 from pomp.core.base import BaseDownloader, BaseHttpRequest, BaseHttpResponse, \
     BaseDownloadException 
@@ -23,7 +20,11 @@ log = logging.getLogger('pomp.contrib.twisted')
 
 
 class TwistedDownloader(BaseDownloader):
+    """Download urls by twisted.web.client.Agent
 
+    :param reactor: twisted reacor
+    :param timeout: request timeout in seconds
+    """
     def __init__(self, reactor, timeout=5, middlewares=None):
         super(TwistedDownloader, self).__init__(middlewares=middlewares)
         self.reactor = reactor
@@ -82,7 +83,15 @@ class TwistedDownloader(BaseDownloader):
 
 
 class TwistedHttpRequest(BaseHttpRequest):
+    """Adapter for twisted request to :class:`pomp.core.base.BaseHttpRequest`
+    
+    Map params to twisted.web.client.Agent().request(method, url, headers, data)
 
+    :param url: request url
+    :param data: request data
+    :param header: request headers
+    :param method: request method
+    """ 
     def __init__(self, url, data=None, headers=None, method='GET'):
         self._url = url.encode('utf-8')
         self.data = StringProducer(urllib.urlencode(data)) if data else None
@@ -98,7 +107,7 @@ class TwistedHttpRequest(BaseHttpRequest):
 
 
 class TwistedHttpResponse(BaseHttpResponse):
-
+    """Adapter for twisted request to :class:`pomp.core.base.BaseHttpResponse`""" 
     def __init__(self, request, response):
         self.req = request
         self.resp = response
@@ -116,7 +125,6 @@ class TwistedHttpResponse(BaseHttpResponse):
 
 
 class SimpleReceiver(protocol.Protocol):
-
     def __init__(s, d):
         s.buf = ''; s.d = d
 

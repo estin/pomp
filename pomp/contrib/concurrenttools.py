@@ -1,7 +1,4 @@
 """
-Concurrent
-``````````
-
 Concurrent downloaders and middlewares for fetching urls by standard 
 `concurrent` package for python3
 """
@@ -19,7 +16,11 @@ log = logging.getLogger('pomp.contrib.concurrent')
 
 
 class ConcurrentUrllibDownloader(SimpleDownloader):
-    """
+    """Concurrent ThreadPoolExecutor downloader for fetching data by urllib
+    :class:`pomp.contrib.SimpleDownloader`
+
+    :param pool_size: size of ThreadPoolExecutor
+    :param timeout: request timeout in seconds
     """
 
     def __init__(self, pool_size=5, timeout=5, middlewares=None):

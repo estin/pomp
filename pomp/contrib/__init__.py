@@ -1,8 +1,5 @@
 """
-Urllib
-``````
-
-Simple downloaders and middlewares for fetching urls by standard 
+Simple downloaders and middlewares for fetching data by standard 
 `urlopen` function from `urllib` package for python3.x
 or `urllib2` for python2.7+
 """

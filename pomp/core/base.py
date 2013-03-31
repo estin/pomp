@@ -50,6 +50,8 @@ class BaseCrawler(object):
     def next_url(self, page):
         """Getting next urls for processing.
  
+        Called after `extract_items` method.
+
         :param page: the instance of :class:`BaseHttpResponse`
         :rtype: ``None`` or one url or list of urls. If ``None`` returned
                 this mean that page have not any urls to following
@@ -180,7 +182,7 @@ class BaseDownloader(object):
 
         :param requests: urls or instances of :class:`BaseHttpRequest`
         :rtype: instances of :class:`BaseHttpResponse` or 
-                :class:`BaseDownloadException`
+                :class:`BaseDownloadException` or deferred for async behavior
         """
         raise NotImplementedError()
 
@@ -250,7 +252,7 @@ class BaseDownloaderMiddleware(object):
 
         :param exception: instance of :class:`BaseDownloadException`
         :rtype: changed response or ``None`` to skip
-                processing of this response
+                processing of this exception
         """ 
         return exception
 

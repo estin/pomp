@@ -1,8 +1,5 @@
 """
 Simple pipelines
-````````````````
-
-Simple pipelines
 """ 
 import csv
 import codecs

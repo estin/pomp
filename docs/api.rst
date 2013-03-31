@@ -8,8 +8,33 @@ functions in pomp.
 Contrib
 *******
 
+Urllib
+``````
+
 .. automodule:: pomp.contrib
     :members:
+
+
+Twisted
+```````
+
+.. automodule:: pomp.contrib.twistedtools
+    :members:
+    :mockimport: twisted, zope
+    :mocktype: protocol.Protocol
+
+
+Concurrent future
+`````````````````
+
+.. automodule:: pomp.contrib.concurrenttools
+    :members: 
+
+
+.. _contrib-pipelines:
+
+Simple pipelines
+````````````````
 
 .. automodule:: pomp.contrib.pipelines
     :members:

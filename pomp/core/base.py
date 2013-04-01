@@ -276,7 +276,7 @@ class BaseHttpResponse(object):
 
     @property
     def response(self):
-        """Response :class:`BaseHttpResponse`"""
+        """Original response object fetched in :meth:`BaseDownloader.get`"""
         raise NotImplementedError()
 
 

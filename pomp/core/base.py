@@ -257,8 +257,18 @@ class BaseDownloaderMiddleware(object):
         return exception
 
 
-class BaseHttpRequest(object):
+class BaseRequest(object):
     """Request interface"""
+    pass
+
+
+class BaseResponse(object):
+    """Response interface"""
+    pass
+
+
+class BaseHttpRequest(BaseRequest):
+    """HTTP request interface"""
 
     @property
     def url(self):
@@ -266,8 +276,8 @@ class BaseHttpRequest(object):
         raise NotImplementedError()
 
 
-class BaseHttpResponse(object):
-    """Response interface"""
+class BaseHttpResponse(BaseResponse):
+    """HTTP response interface"""
 
     @property
     def request(self):

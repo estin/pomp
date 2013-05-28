@@ -64,7 +64,7 @@ class TestContribUrllib(object):
                 return exception
 
         class MockCrawler(BaseCrawler):
-            def next_url(self, response):
+            def next_requests(self, response):
                 return
 
             def extract_items(self, response):

@@ -1,6 +1,6 @@
  * lock in pomp.dive incrementing _in_process variable
  * option to limit `request per host`
- * downloader middlewares can return more than one reqeust/response/exception
+ * downloader middlewares can return more than one reqeust/response
  * plain threads support and async behavior
  * gevent support
  * tornado support

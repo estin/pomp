@@ -47,8 +47,8 @@ class BaseCrawler(object):
     def __init__(self):
         self._in_process = 0
 
-    def next_url(self, page):
-        """Getting next urls for processing.
+    def next_requests(self, page):
+        """Getting next requests for processing.
  
         Called after `extract_items` method.
 

@@ -21,7 +21,7 @@ class DummyCrawler(BaseCrawler):
     def __init__(self):
         super(DummyCrawler, self).__init__()
 
-    def next_url(self, response):
+    def next_requests(self, response):
         res = response.body.get('links', [])
         return res
 

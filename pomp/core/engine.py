@@ -41,7 +41,7 @@ class Pomp(object):
                     map(lambda i: pipe.process(crawler, i), items)
                 ))
 
-        urls = crawler.next_url(response)
+        urls = crawler.next_requests(response)
         if crawler.is_depth_first():
             if urls:
                 self.downloader.process(
@@ -77,37 +77,37 @@ class Pomp(object):
 
         self.stop_deferred = defer.Deferred()
 
-        next_urls = self.downloader.process(
+        next_requests = self.downloader.process(
             iterator(crawler.ENTRY_URL),
             self.response_callback,
             crawler
         )
 
         if not crawler.is_depth_first():
-            self._call_next_urls(next_urls, crawler)
+            self._call_next_requests(next_requests, crawler)
         return self.stop_deferred
 
-    def _call_next_urls(self, next_urls, crawler):
-        deferreds = [n for n in next_urls if n and isinstance(n, defer.Deferred)]
+    def _call_next_requests(self, next_requests, crawler):
+        deferreds = [n for n in next_requests if n and isinstance(n, defer.Deferred)]
         if deferreds: # async behavior
             d = DeferredList(deferreds)
-            d.add_callback(self._on_next_urls, crawler)
+            d.add_callback(self._on_next_requests, crawler)
         else: # sync behavior
-            self._on_next_urls(next_urls, crawler)
+            self._on_next_requests(next_requests, crawler)
 
-    def _on_next_urls(self, next_urls, crawler):
-        for urls in next_urls:
+    def _on_next_requests(self, next_requests, crawler):
+        for requests in next_requests:
 
-            if not urls:
+            if not requests:
                 continue
 
-            _urls = self.downloader.process(
-                iterator(urls),
+            _requests = self.downloader.process(
+                iterator(requests),
                 self.response_callback,
                 crawler
             )
 
-            self._call_next_urls(_urls, crawler)
+            self._call_next_requests(_requests, crawler)
 
         if not self.stoped and not crawler.in_process():
             self._stop(crawler)

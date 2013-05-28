@@ -28,7 +28,7 @@ class Crawler(DummyCrawler):
         super(Crawler, self).__init__()
         self.crawled_urls = []
 
-    def next_url(self, response):
+    def next_requests(self, response):
         url = 'http://python.org/1/trash'
         result = url if url not in self.crawled_urls else None
         self.crawled_urls.append(url)

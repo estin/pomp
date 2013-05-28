@@ -30,7 +30,7 @@ by inherit :class:`base.BaseCrawler`::
                 print(item)
                 return item
 
-        def next_url(self, response):
+        def next_requests(self, response):
             return None # one page crawler, stop crawl
 
 
@@ -145,7 +145,7 @@ For example downloader fetching data by requests_ package::
             def extract_items(self, response):
                 print(response.body)
 
-            def next_url(self, response):
+            def next_requests(self, response):
                 return None # one page crawler
 
         pomp = Pomp(

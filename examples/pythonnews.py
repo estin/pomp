@@ -24,7 +24,7 @@ class PythonNewsItem(Item):
 
 
 class PythonNewsCrawler(BaseCrawler):
-    ENTRY_URL = 'http://python.org/news/'
+    ENTRY_REQUESTS = 'http://python.org/news/'
 
     def extract_items(self, response):
         for i in news_re.findall(response.body.decode('utf-8')):
@@ -32,7 +32,7 @@ class PythonNewsCrawler(BaseCrawler):
             item.title, item.published = i[0], i[2]
             yield item
 
-    def next_url(self, response):
+    def next_requests(self, response):
         return None # one page crawler
 
 

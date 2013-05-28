@@ -77,7 +77,7 @@ class LJFriendSpider(BaseCrawler):
     QS = '?socconns=pfriends&mode_full_socconns=1'
     BASE_URL = 'http://{0}.livejournal.com/profile/friendlist' + QS
 
-    ENTRY_URL = (
+    ENTRY_REQUESTS = (
         FriendLevelRequest(
             BASE_URL.format('grrm'),
             username='grrm'
@@ -96,7 +96,7 @@ class LJFriendSpider(BaseCrawler):
         """
         self.max_level = max_level
         self.friend_limit = friends_limit
-        self.next_requests = []
+        self._next_requests = []
         super(LJFriendSpider, self).__init__()
 
 
@@ -116,7 +116,7 @@ class LJFriendSpider(BaseCrawler):
             if response.request.level < self.max_level and k < self.friend_limit:
                 # generate new url to follow
                 url = i.get('href') + self.QS
-                self.next_requests.append(FriendLevelRequest(
+                self._next_requests.append(FriendLevelRequest(
                     url,
                     username=item.username,
                     level=response.request.level + 1
@@ -124,11 +124,11 @@ class LJFriendSpider(BaseCrawler):
                 k += 1
         return items
 
-    def next_url(self, response):
+    def next_requests(self, response):
         # when users parsed pomp call next_url method for getting next targets
         def _urls():
-            if self.next_requests:
-                yield self.next_requests.pop()
+            if self._next_requests:
+                yield self._next_requests.pop()
         return list(_urls())
 
 

@@ -17,7 +17,6 @@ class DummyItem(Item):
     field4 = Field()
 
 
-
 class TestContribPipelines(object):
 
     def test_csv_pipeline(self):
@@ -30,7 +29,7 @@ class TestContribPipelines(object):
                 quotechar='"',
                 quoting=csv.QUOTE_MINIMAL
             )
-            
+
             # prepare pipe
             pipe.start(None)
 

@@ -40,7 +40,7 @@ def sitemap_app(environ, start_response):
         response = sitemap_app.sitemap.get(requested_url)
     log.debug('Requested url: %s, response: %s', requested_url, response)
     ret = [response.encode('utf-8')]
-    return ret 
+    return ret
 
 
 def make_reponse_body(items, links):
@@ -69,7 +69,7 @@ def make_sitemap(level=3, links_on_page=3, sitemap=None, entry='/root'):
             child_url = '%s/%s' % (entry, child)
             make_entry(child_url, sitemap, links_on_page if level > 1 else 0)
             make_sitemap(level=level - 1, sitemap=sitemap, entry=child_url)
-            
+
     return sitemap
 
 
@@ -92,7 +92,7 @@ class HttpServer(object):
     def start(self):
         log.debug('Start http server: %s', self)
         self.process.start()
-    
+
     def stop(self):
         log.debug('Stop http server: %s', self)
         self.process.terminate()

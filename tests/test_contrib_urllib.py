@@ -48,11 +48,10 @@ class TestContribUrllib(object):
         pomp.pump(Crawler())
 
         assert_set_equal(
-            set([r.url.replace(self.httpd.location, '') \
+            set([r.url.replace(self.httpd.location, '')
                 for r in collect_middleware.requests]),
             set(self.httpd.sitemap.keys())
         )
-
 
     def test_exception_handling(self):
 
@@ -74,7 +73,8 @@ class TestContribUrllib(object):
 
         catch_exception_middleware = CatchException()
         pomp = Pomp(
-            downloader=SimpleDownloader(middlewares=[catch_exception_middleware]),
+            downloader=SimpleDownloader(
+                middlewares=[catch_exception_middleware]),
             pipelines=[],
         )
 

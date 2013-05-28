@@ -2,10 +2,8 @@
 Engine
 """
 import logging
-import itertools
 
 import defer
-
 from pomp.core.utils import iterator, DeferredList
 
 
@@ -20,9 +18,10 @@ class Pomp(object):
     - Downloader implementation with middlewares
     - Item pipelines
     - Crawler
-    
+
     :param downloader: :class:`pomp.core.base.BaseDownloader`
-    :param pipelines: list of item pipelines :class:`pomp.core.base.BasePipeline`
+    :param pipelines: list of item pipelines
+                      :class:`pomp.core.base.BasePipeline`
     """
 
     def __init__(self, downloader, pipelines=None):
@@ -53,13 +52,13 @@ class Pomp(object):
                 if not self.stoped and not crawler.in_process():
                     self._stop(crawler)
 
-            return None # end of recursion
+            return None  # end of recursion
         else:
             return urls
 
     def pump(self, crawler):
         """Start crawling
-        
+
         :param crawler: crawler to execute :class:`pomp.core.base.BaseCrawler`
         """
 
@@ -88,11 +87,12 @@ class Pomp(object):
         return self.stop_deferred
 
     def _call_next_requests(self, next_requests, crawler):
-        deferreds = [n for n in next_requests if n and isinstance(n, defer.Deferred)]
-        if deferreds: # async behavior
+        deferreds = [
+            n for n in next_requests if n and isinstance(n, defer.Deferred)]
+        if deferreds:  # async behavior
             d = DeferredList(deferreds)
             d.add_callback(self._on_next_requests, crawler)
-        else: # sync behavior
+        else:  # sync behavior
             self._on_next_requests(next_requests, crawler)
 
     def _on_next_requests(self, next_requests, crawler):
@@ -119,4 +119,4 @@ class Pomp(object):
             pipe.stop(crawler)
 
         log.info('Stop crawler: %s', crawler)
-        self.stop_deferred.callback(None) 
+        self.stop_deferred.callback(None)

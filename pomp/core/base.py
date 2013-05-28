@@ -26,7 +26,8 @@ class BaseCrawler(object):
     - Extract next urls for following processing from response
 
     Each crawler must have starting point - entry url.
-    To set entry url declare them as class attribute ``ENTRY_REQUESTS`` like that::
+    To set entry url declare them as class attribute ``ENTRY_REQUESTS``
+    like that::
 
         class MyGoogleCrawler(BaseCrawler):
             ENTRY_REQUESTS = 'http://google.com/'
@@ -35,7 +36,7 @@ class BaseCrawler(object):
     ``ENTRY_REQUESTS`` may be list of urls or list of requests
     (instances of :class:`BaseHttpRequest`).
 
-    Crawler may choose which method for crawling to use by setting class 
+    Crawler may choose which method for crawling to use by setting class
     attribute ``CRAWL_METHOD`` with values:
 
     - ``depth first`` is pomp.core.base.CRAWL_DEPTH_FIRST_METHOD (default)
@@ -49,7 +50,7 @@ class BaseCrawler(object):
 
     def next_requests(self, page):
         """Getting next requests for processing.
- 
+
         Called after `extract_items` method.
 
         :param page: the instance of :class:`BaseHttpResponse`
@@ -68,7 +69,7 @@ class BaseCrawler(object):
         :param url: the url of downloaded page
         :param page: the instance of :class:`BaseHttpResponse`
         :rtype: one data item or list of items
-        """    
+        """
         raise NotImplementedError()
 
     def is_depth_first(self):
@@ -87,8 +88,8 @@ class BaseCrawler(object):
 
 class BaseDownloader(object):
     """Downloader interface
-     
-    Downloader must resolve one main task - execute request 
+
+    Downloader must resolve one main task - execute request
     and fetch response.
 
     :param middlewares: list of middlewares, instances
@@ -118,9 +119,9 @@ class BaseDownloader(object):
                 try:
                     request = middleware.process_request(request)
                 except Exception as e:
-                    log.exception('Exception on process %s by %s',
-                        request, middleware)
-                    request = None # stop processing request by middlewares
+                    log.exception(
+                        'Exception on process %s by %s', request, middleware)
+                    request = None  # stop processing request by middlewares
                     self._process_exception(
                         BaseDownloadException(request, exception=e)
                     )
@@ -142,9 +143,9 @@ class BaseDownloader(object):
                 try:
                     response = getattr(middleware, func)(response)
                 except Exception as e:
-                    log.exception('Exception on process %s by %s',
-                        response, middleware)
-                    response = None # stop processing response by middlewares
+                    log.exception(
+                        'Exception on process %s by %s', response, middleware)
+                    response = None  # stop processing response by middlewares
                     self._process_exception(
                         BaseDownloadException(response, exception=e)
                     )
@@ -154,17 +155,17 @@ class BaseDownloader(object):
             if response and not is_error:
                 return callback(crawler, response)
 
-        crawler.dive(len(requests)) # dive in
+        crawler.dive(len(requests))  # dive in
         for response in self.get(requests):
-            if isinstance(response, defer.Deferred): # async behavior
+            if isinstance(response, defer.Deferred):  # async behavior
                 def _(res):
-                    crawler.dive(-1) # dive out
+                    crawler.dive(-1)  # dive out
                     return res
                 response.add_callback(_)
                 response.add_callback(_process_resp)
                 yield response
-            else: # sync behavior
-                crawler.dive(-1) # dive out
+            else:  # sync behavior
+                crawler.dive(-1)  # dive out
                 yield _process_resp(response)
 
     def _process_exception(self, exception):
@@ -172,16 +173,16 @@ class BaseDownloader(object):
             try:
                 value = middleware.process_exception(exception)
             except Exception:
-                log.exception('Exception on prcess %s by %s',
-                    exception, middleware)
-            if not value: # stop processing exception
+                log.exception(
+                    'Exception on prcess %s by %s', exception, middleware)
+            if not value:  # stop processing exception
                 break
 
     def get(self, requests):
         """Execute requests
 
         :param requests: urls or instances of :class:`BaseHttpRequest`
-        :rtype: instances of :class:`BaseHttpResponse` or 
+        :rtype: instances of :class:`BaseHttpResponse` or
                 :class:`BaseDownloadException` or deferred for async behavior
         """
         raise NotImplementedError()
@@ -195,13 +196,13 @@ class BasePipeline(object):
     - filter items
     - change items
     - store items
-    """ 
+    """
 
     def start(self, crawler):
         """Initialize pipe
-        
+
         Open files and database connections etc.
-        
+
         :param crawler: crawler who extract items
         """
         pass
@@ -217,9 +218,9 @@ class BasePipeline(object):
 
     def stop(self, crawler):
         """Finalize pipe
-        
+
         Close files and database connections etc.
-        
+
         :param crawler: crawler who extract items
         """
         pass
@@ -236,7 +237,7 @@ class BaseDownloaderMiddleware(object):
                 execution of this request
         """
         return request
- 
+
     def process_response(self, response):
         """Change response before it will be sent to crawler for exctracting
         items
@@ -244,7 +245,7 @@ class BaseDownloaderMiddleware(object):
         :param response: instance of :class:`BaseHttpResponse`
         :rtype: changed response or ``None`` to skip
                 processing of this response
-        """ 
+        """
         return response
 
     def process_exception(self, exception):
@@ -253,7 +254,7 @@ class BaseDownloaderMiddleware(object):
         :param exception: instance of :class:`BaseDownloadException`
         :rtype: changed response or ``None`` to skip
                 processing of this exception
-        """ 
+        """
         return exception
 
 
@@ -292,7 +293,7 @@ class BaseHttpResponse(BaseResponse):
 
 class BaseDownloadException(Exception):
     """Download exception interface
-    
+
     :param request: request raises this exception
     :param exception: original exception
     """

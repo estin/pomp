@@ -21,7 +21,7 @@ class RaiseOnRequestMiddleware(BaseDownloaderMiddleware):
 
 class RaiseOnResponseMiddleware(BaseDownloaderMiddleware):
     def process_response(self, response):
-        raise Exception('Some exception on Response') 
+        raise Exception('Some exception on Response')
 
 
 class RaiseOnExceptionMiddleware(BaseDownloaderMiddleware):
@@ -43,10 +43,10 @@ class CollectRequestResponseMiddleware(BaseDownloaderMiddleware):
     def process_response(self, response):
         self.responses.append(response)
         return response
-    
+
     def process_exception(self, exception):
         self.exceptions.append(exception)
-        return exception 
+        return exception
 
 
 def test_exception_on_processing_request():
@@ -80,7 +80,7 @@ def test_exception_on_processing_response():
 
     assert_equal(len(collect_middleware.exceptions), 1)
     assert_equal(len(collect_middleware.requests), 1)
-    assert_equal(len(collect_middleware.responses), 1) 
+    assert_equal(len(collect_middleware.responses), 1)
 
 
 def test_exception_on_processing_exception():

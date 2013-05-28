@@ -9,7 +9,8 @@ from pomp.contrib import SimpleDownloader
 
 
 logging.basicConfig(level=logging.DEBUG)
-news_re = re.compile(r'<h2 class="news">(.*?)</h2>([\s\S]*?)<div class="pubdate">(.*?)</div>')
+news_re = re.compile(
+    r'<h2 class="news">(.*?)</h2>([\s\S]*?)<div class="pubdate">(.*?)</div>')
 
 
 class PythonNewsItem(Item):
@@ -33,7 +34,7 @@ class PythonNewsCrawler(BaseCrawler):
             yield item
 
     def next_requests(self, response):
-        return None # one page crawler
+        return None  # one page crawler
 
 
 class PrintPipeline(BasePipeline):

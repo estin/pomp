@@ -12,7 +12,7 @@ from zope.interface import implements
 from twisted.web.http_headers import Headers
 
 from pomp.core.base import BaseDownloader, BaseHttpRequest, BaseHttpResponse, \
-    BaseDownloadException 
+    BaseDownloadException
 from pomp.core.utils import iterator
 
 
@@ -49,6 +49,7 @@ class TwistedDownloader(BaseDownloader):
         # Set timeout to request
         # on timeout will be errorBack with CancelledError
         watchdog = self.reactor.callLater(self.timeout, d.cancel)
+
         def _reset_timeout(res):
             if watchdog.active():
                 watchdog.cancel()
@@ -84,14 +85,15 @@ class TwistedDownloader(BaseDownloader):
 
 class TwistedHttpRequest(BaseHttpRequest):
     """Adapter for twisted request to :class:`pomp.core.base.BaseHttpRequest`
-    
-    Map params to twisted.web.client.Agent().request(method, url, headers, data)
+
+    Map params to
+    twisted.web.client.Agent().request(method, url, headers, data)
 
     :param url: request url
     :param data: request data
     :param header: request headers
     :param method: request method
-    """ 
+    """
     def __init__(self, url, data=None, headers=None, method='GET'):
         self._url = url.encode('utf-8')
         self.data = StringProducer(urllib.urlencode(data)) if data else None
@@ -107,7 +109,8 @@ class TwistedHttpRequest(BaseHttpRequest):
 
 
 class TwistedHttpResponse(BaseHttpResponse):
-    """Adapter for twisted request to :class:`pomp.core.base.BaseHttpResponse`""" 
+    """Adapter for twisted request to
+    :class:`pomp.core.base.BaseHttpResponse`"""
     def __init__(self, request, response):
         self.req = request
         self.resp = response
@@ -121,19 +124,21 @@ class TwistedHttpResponse(BaseHttpResponse):
 
     @property
     def response(self):
-        return self.resp 
+        return self.resp
 
 
 class SimpleReceiver(protocol.Protocol):
     def __init__(s, d):
-        s.buf = ''; s.d = d
+        s.buf = ''
+        s.d = d
 
     def dataReceived(s, data):
         s.buf += data
 
     def connectionLost(s, reason):
-        # TODO: test if reason is twisted.web.client.ResponseDone, if not, do an errback
-        s.d.callback(s.buf) 
+        # TODO: test if reason is twisted.web.client.ResponseDone,
+        # if not, do an errback
+        s.d.callback(s.buf)
 
 
 class StringProducer(object):

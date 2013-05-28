@@ -3,7 +3,7 @@ from pomp.core.base import BaseCrawler, BaseDownloaderMiddleware, BasePipeline
 from pomp.core.base import BaseHttpRequest, BaseHttpResponse
 from pomp.core.base import BaseDownloader
 from pomp.core.base import CRAWL_WIDTH_FIRST_METHOD
-from pomp.core.item import Item, Field 
+from pomp.core.item import Item, Field
 
 
 class DummyItem(Item):
@@ -29,7 +29,7 @@ class DummyCrawler(BaseCrawler):
         item = DummyItem()
         item.value = 1
         item.url = response.request.url
-        yield item 
+        yield item
 
 
 class DummyDownloader(BaseDownloader):
@@ -46,12 +46,12 @@ class RequestResponseMiddleware(BaseDownloaderMiddleware):
         self.bodyjson = bodyjson
         self.prefix_url = prefix_url
         self.request_factory = request_factory
-    
+
     def process_request(self, url):
         url = '%s%s' % (self.prefix_url, url) \
             if self.prefix_url else url
         return self.request_factory(url)
-    
+
     def process_response(self, response):
         if self.bodyjson:
             response.body = json.loads(response.body.decode('utf-8'))
@@ -72,7 +72,7 @@ class CollectRequestResponseMiddleware(BaseDownloaderMiddleware):
     def process_response(self, response):
         self.responses.append(response)
         return response
-    
+
     def process_exception(self, exception):
         self.exceptions.append(exception)
         return exception
@@ -95,7 +95,7 @@ class DummyRequest(BaseHttpRequest):
 
 
 class DummyResponse(BaseHttpResponse):
-    
+
     def __init__(self, request, response):
         self.req = request
         self.resp = response
@@ -106,4 +106,4 @@ class DummyResponse(BaseHttpResponse):
 
     @property
     def response(self):
-        return self.response 
+        return self.response

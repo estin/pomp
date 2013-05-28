@@ -8,7 +8,7 @@ from pomp.contrib import UrllibHttpRequest
 try:
     from pomp.contrib.concurrenttools import ConcurrentUrllibDownloader
 except ImportError:
-    raise SkipTest('concurrent future not available') 
+    raise SkipTest('concurrent future not available')
 
 from tools import DummyCrawler
 from tools import RequestResponseMiddleware, CollectRequestResponseMiddleware
@@ -53,7 +53,7 @@ class TestContribConcurrent(object):
         pomp.pump(Crawler())
 
         assert_set_equal(
-            set([r.url.replace(self.httpd.location, '') \
+            set([r.url.replace(self.httpd.location, '')
                 for r in collect_middleware.requests]),
             set(self.httpd.sitemap.keys())
         )

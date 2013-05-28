@@ -1,6 +1,6 @@
 """
 Simple pipelines
-""" 
+"""
 import csv
 import codecs
 from pomp.core.base import BasePipeline
@@ -24,7 +24,6 @@ class CsvPipeline(BasePipeline):
 
         # no close file if it not opened by this instance
         self._need_close = False
-
 
     def start(self, crawler):
         if isstring(self.output_file):

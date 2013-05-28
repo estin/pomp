@@ -1,5 +1,5 @@
 """
-Concurrent downloaders and middlewares for fetching urls by standard 
+Concurrent downloaders and middlewares for fetching urls by standard
 `concurrent` package for python3
 """
 import logging

@@ -1,5 +1,5 @@
 """
-Simple downloaders and middlewares for fetching data by standard 
+Simple downloaders and middlewares for fetching data by standard
 `urlopen` function from `urllib` package for python3.x
 or `urllib2` for python2.7+
 """
@@ -21,7 +21,7 @@ log = logging.getLogger('pomp.contrib.urllib')
 
 class SimpleDownloader(BaseDownloader):
     """Simplest downloader
-    
+
     :param timeout: request timeout in seconds
     """
 
@@ -64,7 +64,7 @@ class ThreadedDownloader(SimpleDownloader):
 
 
 class UrllibHttpRequest(Request, BaseHttpRequest):
-    """Adapter for urllib request to :class:`pomp.core.base.BaseHttpRequest`""" 
+    """Adapter for urllib request to :class:`pomp.core.base.BaseHttpRequest`"""
 
     @property
     def url(self):
@@ -72,7 +72,8 @@ class UrllibHttpRequest(Request, BaseHttpRequest):
 
 
 class UrllibHttpResponse(BaseHttpResponse):
-    """Adapter for urllib response to :class:`pomp.core.base.BaseHttpResponse`""" 
+    """Adapter for urllib response to
+    :class:`pomp.core.base.BaseHttpResponse`"""
 
     def __init__(self, request, response):
         self.req = request
@@ -91,7 +92,7 @@ class UrllibHttpResponse(BaseHttpResponse):
 
 
 class UrllibAdapterMiddleware(BaseDownloaderMiddleware):
-    """Middlerware for adapting urllib.Request 
+    """Middlerware for adapting urllib.Request
     to :class:`pomp.core.base.BaseHttpRequest`
     """
 

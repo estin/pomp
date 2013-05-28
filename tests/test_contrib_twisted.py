@@ -40,7 +40,8 @@ class TestContribTiwsted(object):
             request_factory=TwistedHttpRequest,
         )
         collect_middleware = CollectRequestResponseMiddleware()
-        downloader = TwistedDownloader(reactor, middlewares=[collect_middleware])
+        downloader = TwistedDownloader(
+            reactor, middlewares=[collect_middleware])
 
         downloader.middlewares.insert(0, req_resp_middleware)
 
@@ -59,8 +60,8 @@ class TestContribTiwsted(object):
 
         def check(x):
             assert_set_equal(
-                set([r.url.replace(self.httpd.location, '') \
-                    for r in  collect_middleware.requests]),
+                set([r.url.replace(self.httpd.location, '')
+                    for r in collect_middleware.requests]),
                 set(self.httpd.sitemap.keys())
             )
 
@@ -73,10 +74,11 @@ class TestContribTiwsted(object):
         req_resp_middleware = RequestResponseMiddleware(
             prefix_url='invalid url',
             request_factory=TwistedHttpRequest,
-        ) 
+        )
         collect_middleware = CollectRequestResponseMiddleware()
 
-        downloader = TwistedDownloader(reactor, middlewares=[collect_middleware])
+        downloader = TwistedDownloader(
+            reactor, middlewares=[collect_middleware])
 
         downloader.middlewares.insert(0, req_resp_middleware)
 
@@ -86,7 +88,7 @@ class TestContribTiwsted(object):
         )
 
         class Crawler(DummyCrawler):
-            ENTRY_REQUESTS = '/root' 
+            ENTRY_REQUESTS = '/root'
 
         done_defer = defer.Deferred()
         d = pomp.pump(Crawler())
@@ -96,12 +98,11 @@ class TestContribTiwsted(object):
 
         def check(x):
             assert len(collect_middleware.exceptions) == 1
-            assert isinstance(collect_middleware.exceptions[0], 
-                BaseDownloadException)
+            assert isinstance(
+                collect_middleware.exceptions[0], BaseDownloadException)
 
         done_defer.addCallback(check)
-        return done_defer 
-
+        return done_defer
 
     @deferred(timeout=1.0)
     def test_timeout(self):
@@ -112,7 +113,8 @@ class TestContribTiwsted(object):
         )
         collect_middleware = CollectRequestResponseMiddleware()
 
-        downloader = TwistedDownloader(reactor,
+        downloader = TwistedDownloader(
+            reactor,
             timeout=0.5,
             middlewares=[collect_middleware]
         )

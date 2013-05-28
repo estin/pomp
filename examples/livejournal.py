@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
     LiveJournal friends of http://grrm.livejournal.com/ user
-    
+
     requires: lxml
 
     store csv data to /tmp/friends.csv
@@ -34,7 +34,8 @@ class LXMLDownloaderMiddleware(BaseDownloaderMiddleware):
 
     def process_response(self, response):
         if self.encoding:
-            response.tree = html.fromstring(response.body.decode(self.encoding))
+            response.tree = html.fromstring(
+                response.body.decode(self.encoding))
         else:
             response.tree = html.fromstring(response.body)
         return response
@@ -85,8 +86,8 @@ class LJFriendSpider(BaseCrawler):
     )
 
     FRIENDS_XPATH = '//dl[contains(@data-widget-options, "socconns")]' \
-    '/dd[@class="b-profile-group-body"]' \
-    '/div[@class="b-tabs-content"]/a'
+                    '/dd[@class="b-profile-group-body"]' \
+                    '/div[@class="b-tabs-content"]/a'
 
     def __init__(self, max_level=2, friends_limit=2):
         """LiveJournal spider
@@ -99,7 +100,6 @@ class LJFriendSpider(BaseCrawler):
         self._next_requests = []
         super(LJFriendSpider, self).__init__()
 
-
     def extract_items(self, response):
         items = []
         k = 0
@@ -109,11 +109,12 @@ class LJFriendSpider(BaseCrawler):
             item.username = i.text
 
             # associate parsed user with hist friend from parent request
-            item.friend_to = response.request.username 
+            item.friend_to = response.request.username
             items.append(item)
 
             # follow to item.username
-            if response.request.level < self.max_level and k < self.friend_limit:
+            if response.request.level < self.max_level \
+                    and k < self.friend_limit:
                 # generate new url to follow
                 url = i.get('href') + self.QS
                 self._next_requests.append(FriendLevelRequest(
@@ -125,7 +126,8 @@ class LJFriendSpider(BaseCrawler):
         return items
 
     def next_requests(self, response):
-        # when users parsed pomp call next_url method for getting next targets
+        # when users parsed pomp call next_url method
+        # for getting next targets
         def _urls():
             if self._next_requests:
                 yield self._next_requests.pop()

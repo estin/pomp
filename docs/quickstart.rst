@@ -22,7 +22,7 @@ by inherit :class:`base.BaseCrawler`::
 
     class MyCrawler(BaseCrawler):
         """Extract all sentences with `python` word"""
-        ENTRY_URL = 'http://python.org/news' # entry point
+        ENTRY_REQUESTS = 'http://python.org/news' # entry point
 
         def extract_items(self, response):
             for i in python_sentence_re.findall(response.body.decode('utf-8')):
@@ -140,7 +140,7 @@ For example downloader fetching data by requests_ package::
         from pomp.core.engine import Pomp
 
         class Crawler(BaseCrawler):
-            ENTRY_URL = ReqRequest('http://python.org/news/')
+            ENTRY_REQUESTS = ReqRequest('http://python.org/news/')
 
             def extract_items(self, response):
                 print(response.body)

@@ -78,7 +78,7 @@ class Pomp(object):
         self.stop_deferred = defer.Deferred()
 
         next_requests = self.downloader.process(
-            iterator(crawler.ENTRY_URL),
+            iterator(crawler.ENTRY_REQUESTS),
             self.response_callback,
             crawler
         )

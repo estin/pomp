@@ -9,6 +9,7 @@ Version 0.1.0
 
 Release date to be decided.
 
+- ENTRY_URL renamed to ENTRY_REQUESTS
 - next_url renamed to next_requests
 - async support
 - Twisted support

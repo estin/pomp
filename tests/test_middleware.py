@@ -10,6 +10,10 @@ from tools import DummyDownloader, DummyCrawler
 logging.basicConfig(level=logging.DEBUG)
 
 
+class Crawler(DummyCrawler):
+    ENTRY_REQUESTS = '/'
+
+
 class RaiseOnRequestMiddleware(BaseDownloaderMiddleware):
     def process_request(self, request):
         raise Exception('Some exception on Request')
@@ -55,7 +59,7 @@ def test_exception_on_processing_request():
         ]),
     )
 
-    pomp.pump(DummyCrawler())
+    pomp.pump(Crawler())
 
     assert_equal(len(collect_middleware.exceptions), 1)
     assert_equal(len(collect_middleware.requests), 0)
@@ -72,7 +76,7 @@ def test_exception_on_processing_response():
         ]),
     )
 
-    pomp.pump(DummyCrawler())
+    pomp.pump(Crawler())
 
     assert_equal(len(collect_middleware.exceptions), 1)
     assert_equal(len(collect_middleware.requests), 1)
@@ -90,7 +94,7 @@ def test_exception_on_processing_exception():
         ]),
     )
 
-    pomp.pump(DummyCrawler())
+    pomp.pump(Crawler())
 
     assert_equal(len(collect_middleware.exceptions), 1)
     assert_equal(len(collect_middleware.requests), 0)

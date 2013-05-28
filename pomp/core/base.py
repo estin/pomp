@@ -26,13 +26,13 @@ class BaseCrawler(object):
     - Extract next urls for following processing from response
 
     Each crawler must have starting point - entry url.
-    To set entry url declare them as class attribute ``ENTRY_URL`` like that::
+    To set entry url declare them as class attribute ``ENTRY_REQUESTS`` like that::
 
         class MyGoogleCrawler(BaseCrawler):
-            ENTRY_URL = 'http://google.com/'
+            ENTRY_REQUESTS = 'http://google.com/'
             ...
 
-    ``ENTRY_URL`` may be list of urls or list of requests
+    ``ENTRY_REQUESTS`` may be list of urls or list of requests
     (instances of :class:`BaseHttpRequest`).
 
     Crawler may choose which method for crawling to use by setting class 
@@ -41,7 +41,7 @@ class BaseCrawler(object):
     - ``depth first`` is pomp.core.base.CRAWL_DEPTH_FIRST_METHOD (default)
     - ``width first`` is pomp.core.base.CRAWL_WIDTH_FIRST_METHOD
     """
-    ENTRY_URL = None
+    ENTRY_REQUESTS = None
     CRAWL_METHOD = CRAWL_DEPTH_FIRST_METHOD
 
     def __init__(self):

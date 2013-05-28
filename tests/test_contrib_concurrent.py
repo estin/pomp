@@ -47,8 +47,10 @@ class TestContribConcurrent(object):
             pipelines=[],
         )
 
-        DummyCrawler.ENTRY_URL = '/root'
-        pomp.pump(DummyCrawler())
+        class Crawler(DummyCrawler):
+            ENTRY_REQUESTS = '/root'
+
+        pomp.pump(Crawler())
 
         assert_set_equal(
             set([r.url.replace(self.httpd.location, '') \

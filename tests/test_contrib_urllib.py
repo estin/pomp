@@ -42,8 +42,10 @@ class TestContribUrllib(object):
             pipelines=[],
         )
 
-        DummyCrawler.ENTRY_URL = '/root'
-        pomp.pump(DummyCrawler())
+        class Crawler(DummyCrawler):
+            ENTRY_REQUESTS = '/root'
+
+        pomp.pump(Crawler())
 
         assert_set_equal(
             set([r.url.replace(self.httpd.location, '') \
@@ -76,7 +78,7 @@ class TestContribUrllib(object):
             pipelines=[],
         )
 
-        MockCrawler.ENTRY_URL = [
+        MockCrawler.ENTRY_REQUESTS = [
             'https://123.456.789.01:8081/fake_url',
             '%s/root' % self.httpd.location,
         ]

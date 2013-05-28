@@ -49,10 +49,11 @@ class TestContribTiwsted(object):
             pipelines=[PrintPipeline()],
         )
 
-        DummyCrawler.ENTRY_URL = '/root'
+        class Crawler(DummyCrawler):
+            ENTRY_REQUESTS = '/root'
 
         done_defer = defer.Deferred()
-        d = pomp.pump(DummyCrawler())
+        d = pomp.pump(Crawler())
 
         d.add_callback(done_defer.callback)
 
@@ -84,10 +85,11 @@ class TestContribTiwsted(object):
             pipelines=[PrintPipeline()],
         )
 
-        DummyCrawler.ENTRY_URL = '/root'
+        class Crawler(DummyCrawler):
+            ENTRY_REQUESTS = '/root' 
 
         done_defer = defer.Deferred()
-        d = pomp.pump(DummyCrawler())
+        d = pomp.pump(Crawler())
 
         d.add_callback(done_defer.callback)
         #d.add_callback(done_defer.callback)
@@ -122,10 +124,11 @@ class TestContribTiwsted(object):
             pipelines=[PrintPipeline()],
         )
 
-        DummyCrawler.ENTRY_URL = '/sleep'
+        class Crawler(DummyCrawler):
+            ENTRY_REQUESTS = '/sleep'
 
         done_defer = defer.Deferred()
-        d = pomp.pump(DummyCrawler())
+        d = pomp.pump(Crawler())
 
         d.add_callback(done_defer.callback)
 

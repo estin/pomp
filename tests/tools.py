@@ -15,7 +15,7 @@ class DummyItem(Item):
 
 
 class DummyCrawler(BaseCrawler):
-    ENTRY_URL = None
+    ENTRY_REQUESTS = None
     CRAWL_METHOD = CRAWL_WIDTH_FIRST_METHOD
 
     def __init__(self):

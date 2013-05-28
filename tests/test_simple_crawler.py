@@ -19,7 +19,7 @@ url_to_request_middl = RequestResponseMiddleware(
 
 
 class Crawler(DummyCrawler):
-    ENTRY_URL = (
+    ENTRY_REQUESTS = (
         "http://python.org/1",
         "http://python.org/2"
     )

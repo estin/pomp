@@ -1,6 +1,7 @@
 """
 Extract python news from python.org
 """
+import sys
 import re
 import logging
 from pomp.core.base import BaseCrawler, BasePipeline
@@ -8,7 +9,7 @@ from pomp.core.item import Item, Field
 from pomp.contrib import SimpleDownloader
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 news_re = re.compile(
     r'<h2 class="news">(.*?)</h2>([\s\S]*?)<div class="pubdate">(.*?)</div>')
 

@@ -1,3 +1,5 @@
+import os
+import sys 
 import time
 import json
 import logging
@@ -10,7 +12,27 @@ logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger('mockserver')
 
 
-# TODO silent server
+devnull = open(os.devnull, 'w')
+
+
+class RedirectStdStreams(object):
+    def __init__(self, stdout=None, stderr=None):
+        self._stdout = stdout or sys.stdout
+        self._stderr = stderr or sys.stderr
+
+    def __enter__(self):
+        self.old_stdout, self.old_stderr = sys.stdout, sys.stderr
+        self.old_stdout.flush()
+        self.old_stderr.flush()
+        sys.stdout, sys.stderr = self._stdout, self._stderr
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._stdout.flush()
+        self._stderr.flush()
+        sys.stdout = self.old_stdout
+        sys.stderr = self.old_stderr
+
+
 def simple_app(environ, start_response):
     setup_testing_defaults(environ)
 
@@ -91,7 +113,8 @@ class HttpServer(object):
 
     def start(self):
         log.debug('Start http server: %s', self)
-        self.process.start()
+        with RedirectStdStreams(stdout=devnull, stderr=devnull):
+            self.process.start()
 
     def stop(self):
         log.debug('Stop http server: %s', self)

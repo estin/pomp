@@ -3,7 +3,7 @@ syntax: glob
 *.pyc
 *~
 *egg*
-.cibox
+.tox
 dist/
 html_docs/
 docs/_build/

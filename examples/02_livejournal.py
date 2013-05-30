@@ -8,6 +8,7 @@
     print result dict
 
 """
+import sys
 import logging
 import pprint
 from collections import defaultdict
@@ -21,7 +22,7 @@ from pomp.contrib import UrllibHttpRequest
 from pomp.core.item import Item, Field
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
 
 class LXMLDownloaderMiddleware(BaseDownloaderMiddleware):

@@ -3,6 +3,7 @@ from nose.tools import assert_set_equal, assert_equal
 from pomp.core.base import BaseCrawler, BaseDownloaderMiddleware
 from pomp.core.engine import Pomp
 from pomp.contrib.urllibtools import UrllibDownloader, ThreadedDownloader
+from pomp.contrib.urllibtools import UrllibAdapterMiddleware
 
 from mockserver import HttpServer, make_sitemap
 from tools import DummyCrawler
@@ -32,7 +33,7 @@ class TestContribUrllib(object):
         collect_middleware = CollectRequestResponseMiddleware()
 
         downloader = ThreadedDownloader(
-            middlewares=[collect_middleware]
+            middlewares=[UrllibAdapterMiddleware(), collect_middleware]
         )
 
         downloader.middlewares.insert(0, req_resp_midlleware)
@@ -74,7 +75,10 @@ class TestContribUrllib(object):
         catch_exception_middleware = CatchException()
         pomp = Pomp(
             downloader=UrllibDownloader(
-                middlewares=[catch_exception_middleware]),
+                middlewares=[
+                    UrllibAdapterMiddleware(),
+                    catch_exception_middleware
+                ]),
             pipelines=[],
         )
 

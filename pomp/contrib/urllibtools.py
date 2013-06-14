@@ -27,8 +27,6 @@ class UrllibDownloader(BaseDownloader):
 
     def __init__(self, timeout=5, middlewares=None):
         super(UrllibDownloader, self).__init__(middlewares=middlewares)
-        # insert urllib adpter middleware by default
-        self.middlewares.insert(0, UrllibAdapterMiddleware())
         self.timeout = timeout
 
     def get(self, requests):

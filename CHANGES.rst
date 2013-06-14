@@ -7,7 +7,7 @@ Here you can see the full list of changes between pomp releases.
 Version 0.1.0
 -------------
 
-Release date to be decided.
+Released on June 14nd 2013
 
 - rename SimpleDownloader to UrllibDownloader
 - urllib code now in contrib/urllibtools.py

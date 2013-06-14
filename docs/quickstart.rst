@@ -36,10 +36,10 @@ by inherit :class:`base.BaseCrawler`::
 
     if __name__ == '__main__':
         from pomp.core.engine import Pomp
-        from pomp.contrib import SimpleDownloader
+        from pomp.contrib.urllibtools import UrllibDownloader
 
         pomp = Pomp(
-            downloader=SimpleDownloader(),
+            downloader=UrllibDownloader(),
         )
 
         pomp.pump(MyCrawler())
@@ -68,7 +68,7 @@ printing sentence::
             return item # return item for following processing
 
     pomp = Pomp(
-        downloader=SimpleDownloader(),
+        downloader=UrllibDownloader(),
         pipelines=(FilterPipeline(), PrintPipeline(),)
     )
 

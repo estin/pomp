@@ -11,7 +11,7 @@ Contrib
 Urllib
 ``````
 
-.. automodule:: pomp.contrib
+.. automodule:: pomp.contrib.urllibtools
     :members:
 
 

@@ -6,7 +6,7 @@ import re
 import logging
 from pomp.core.base import BaseCrawler, BasePipeline
 from pomp.core.item import Item, Field
-from pomp.contrib import SimpleDownloader
+from pomp.contrib.urllibtools import UrllibDownloader
 
 
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     from pomp.core.engine import Pomp
 
     pomp = Pomp(
-        downloader=SimpleDownloader(),
+        downloader=UrllibDownloader(),
         pipelines=[PrintPipeline()],
     )
 

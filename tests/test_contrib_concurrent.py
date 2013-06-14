@@ -3,7 +3,7 @@ from nose import SkipTest
 from nose.tools import assert_set_equal
 
 from pomp.core.engine import Pomp
-from pomp.contrib import UrllibHttpRequest
+from pomp.contrib.urllibtools import UrllibHttpRequest
 
 try:
     from pomp.contrib.concurrenttools import ConcurrentUrllibDownloader

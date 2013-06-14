@@ -9,13 +9,13 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import defer
 
 from pomp.core.base import BaseDownloadException
-from pomp.contrib import SimpleDownloader
+from pomp.contrib.urllibtools import UrllibDownloader
 
 
 log = logging.getLogger('pomp.contrib.concurrent')
 
 
-class ConcurrentUrllibDownloader(SimpleDownloader):
+class ConcurrentUrllibDownloader(UrllibDownloader):
     """Concurrent ThreadPoolExecutor downloader for fetching data by urllib
     :class:`pomp.contrib.SimpleDownloader`
 

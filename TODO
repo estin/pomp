@@ -1,4 +1,3 @@
- * lock in pomp.dive incrementing _in_process variable
  * write docs about BaseDownloader as recursive downloader
    implement new `queued downloader`, witch must get requests from external queue,
    and put next request to it (needed for distributed systems)

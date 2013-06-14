@@ -3,7 +3,7 @@ Base class
 
  .. note::
 
-    All this class must be overridden
+    All this class must be subclassed
 """
 import logging
 
@@ -76,7 +76,8 @@ class BaseCrawler(object):
         return self.CRAWL_METHOD == CRAWL_DEPTH_FIRST_METHOD
 
     def dive(self, value=1):
-        # TODO must be wrapped by `lock`
+        # this method called in one thread - MainThread
+        # dowloader fetch request sync or async
         self._in_process += value
 
     def _reset_state(self):

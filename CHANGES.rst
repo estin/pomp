@@ -3,6 +3,13 @@ pomp changelog
 
 Here you can see the full list of changes between pomp releases.
 
+Version 0.1.1
+-------------
+
+Not released yet
+
+- better generator usage
+
 
 Version 0.1.0
 -------------

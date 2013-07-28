@@ -1,6 +1,7 @@
 """
 Engine
 """
+import types
 import logging
 
 import defer
@@ -34,11 +35,12 @@ class Pomp(object):
         log.info('Process %s', response)
         items = crawler.process(response)
 
-        if items:
-            for pipe in self.pipelines:
-                items = filter(None, list(
-                    map(lambda i: pipe.process(crawler, i), items)
-                ))
+        # pipe items
+        for pipe in self.pipelines:
+            items = filter(
+                None,
+                [pipe.process(crawler, i) for i in items],
+            )
 
         urls = crawler.next_requests(response)
         if crawler.is_depth_first():
@@ -84,23 +86,34 @@ class Pomp(object):
 
         if not crawler.is_depth_first():
             self._call_next_requests(next_requests, crawler)
+        else:
+            # is width first method
+            # execute generator
+            if isinstance(next_requests, types.GeneratorType):
+                list(next_requests)  # fire generator
         return self.stop_deferred
 
     def _call_next_requests(self, next_requests, crawler):
-        deferreds = [
-            n for n in next_requests if n and isinstance(n, defer.Deferred)]
+        # separate deferred and regular requests
+        # fire generator
+        deferreds = []
+        other = []
+        for r in filter(None, next_requests):
+            if isinstance(r, defer.Deferred):
+                deferreds.append(r)
+            else:
+                other.append(r)
+
         if deferreds:  # async behavior
             d = DeferredList(deferreds)
             d.add_callback(self._on_next_requests, crawler)
-        else:  # sync behavior
-            self._on_next_requests(next_requests, crawler)
+
+        if other:  # sync behavior
+            self._on_next_requests(other, crawler)
 
     def _on_next_requests(self, next_requests, crawler):
-        for requests in next_requests:
-
-            if not requests:
-                continue
-
+        # execute request by downloader
+        for requests in filter(None, next_requests):
             _requests = self.downloader.process(
                 iterator(requests),
                 self.response_callback,

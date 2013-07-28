@@ -107,7 +107,7 @@ class BaseDownloader(object):
         self.response_middlewares.reverse()
 
     def process(self, urls, callback, crawler):
-        return list(self._lazy_process_async(urls, callback, crawler))
+        return self._lazy_process_async(urls, callback, crawler)
 
     def _lazy_process_async(self, urls, callback, crawler):
         if not urls:

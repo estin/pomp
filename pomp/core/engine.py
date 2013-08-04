@@ -5,6 +5,7 @@ import types
 import logging
 
 import defer
+
 from pomp.core.utils import iterator, DeferredList
 
 
@@ -23,12 +24,18 @@ class Pomp(object):
     :param downloader: :class:`pomp.core.base.BaseDownloader`
     :param pipelines: list of item pipelines
                       :class:`pomp.core.base.BasePipeline`
+    :param queue: instance of :class:`pomp.core.base.BaseQueue`
+    :param stop_on_empty_queue: stop processing if queue is empty
     """
 
-    def __init__(self, downloader, pipelines=None):
+    def __init__(
+            self, downloader, pipelines=None,
+            queue=None, stop_on_empty_queue=True):
 
         self.downloader = downloader
         self.pipelines = pipelines or tuple()
+        self.queue = queue
+        self.stop_on_empty_queue = stop_on_empty_queue
 
     def response_callback(self, crawler, response):
 
@@ -42,21 +49,26 @@ class Pomp(object):
                 [pipe.process(crawler, i) for i in items],
             )
 
-        urls = crawler.next_requests(response)
-        if crawler.is_depth_first():
-            if urls:
-                self.downloader.process(
-                    iterator(urls),
-                    self.response_callback,
-                    crawler
-                )
-            else:
-                if not self.stoped and not crawler.in_process():
-                    self._stop(crawler)
+        # get next requests
+        next_requests = crawler.next_requests(response)
 
-            return None  # end of recursion
-        else:
-            return urls
+        if self.queue:  # return request for queue get/put loop
+            return next_requests
+        else:  # execute requests by `witdh first` or `depth first` methods
+            if crawler.is_depth_first():
+                if next_requests:
+                    self.downloader.process(
+                        iterator(next_requests),
+                        self.response_callback,
+                        crawler
+                    )
+                else:
+                    if not self.stoped and not crawler.in_process():
+                        self._stop(crawler)
+
+                return None  # end of recursion
+            else:
+                return next_requests
 
     def pump(self, crawler):
         """Start crawling
@@ -78,19 +90,60 @@ class Pomp(object):
 
         self.stop_deferred = defer.Deferred()
 
-        next_requests = self.downloader.process(
-            iterator(crawler.ENTRY_REQUESTS),
-            self.response_callback,
-            crawler
-        )
+        next_requests = getattr(crawler, 'ENTRY_REQUESTS', None)
 
-        if not crawler.is_depth_first():
-            self._call_next_requests(next_requests, crawler)
-        else:
-            # is width first method
-            # execute generator
-            if isinstance(next_requests, types.GeneratorType):
-                list(next_requests)  # fire generator
+        # process ENTRY_REQUESTS
+        if next_requests:
+            next_requests = self.downloader.process(
+                iterator(crawler.ENTRY_REQUESTS),
+                self.response_callback,
+                crawler
+            )
+
+        if self.queue:
+
+            # if ENTRY_REQUESTS produce new requests
+            # put them to queue
+            if next_requests:
+                next_requests = list(next_requests)
+                self.queue.put_requests(
+                    list(filter(None, iterator(next_requests)))  # fire
+                )
+
+            # queue processing loop
+            while True:
+
+                # wait requests from queue
+                try:
+                    requests = self.queue.get_requests()
+                except Exception:
+                    log.exception('On get requests from %s', self.queue)
+                    raise
+
+                if self.stop_on_empty_queue and not requests:
+                    log.info('Queue empty - STOP')
+                    break
+
+                # process request from queue
+                next_requests = self.downloader.process(
+                    iterator(requests),
+                    self.response_callback,
+                    crawler
+                )
+
+                # put new requests to queue
+                self.queue.put_requests(
+                    list(filter(None, iterator(next_requests)))  # fire
+                )
+
+        else:  # recursive process
+            if not crawler.is_depth_first():
+                self._call_next_requests(next_requests, crawler)
+            else:
+                # is width first method
+                # execute generator
+                if isinstance(next_requests, types.GeneratorType):
+                    list(next_requests)  # fire generator
         return self.stop_deferred
 
     def _call_next_requests(self, next_requests, crawler):

@@ -1,6 +1,6 @@
 import logging
 from nose.tools import assert_equal
-from pomp.core.base import BasePipeline
+from pomp.core.base import BasePipeline, BaseQueue
 from pomp.core.base import CRAWL_WIDTH_FIRST_METHOD
 from pomp.core.engine import Pomp
 
@@ -35,21 +35,22 @@ class Crawler(DummyCrawler):
         return result
 
 
+class RoadPipeline(BasePipeline):
+
+    def __init__(self):
+        self.collection = []
+
+    def process(self, crawler, item):
+        self.collection.append(item)
+        return item
+
+    def reset(self):
+        self.collection = []
+
+
 class TestSimplerCrawler(object):
 
     def test_crawler_dive_methods(self):
-        class RoadPipeline(BasePipeline):
-
-            def __init__(self):
-                self.collection = []
-
-            def process(self, crawler, item):
-                self.collection.append(item)
-                return item
-
-            def reset(self):
-                self.collection = []
-
         road = RoadPipeline()
 
         pomp = Pomp(
@@ -123,3 +124,42 @@ class TestSimplerCrawler(object):
             ('http://python.org/1', 2),
             ('http://python.org/2', 2),
         ])
+
+    def test_queue_crawler(self):
+        road = RoadPipeline()
+
+        class SimpleQueue(BaseQueue):
+
+            def __init__(self):
+                self.requests = []
+
+            def get_requests(self):
+                try:
+                    return self.requests.pop()
+                except IndexError:
+                    return  # empty queue
+
+            def put_requests(self, request):
+                self.requests.append(request)
+
+        queue = SimpleQueue()
+
+        pomp = Pomp(
+            downloader=DummyDownloader(middlewares=[url_to_request_middl]),
+            pipelines=[
+                road,
+            ],
+            queue=queue,
+            stop_on_empty_queue=True,
+        )
+
+        class DummyWidthCrawler(Crawler):
+            CRAWL_METHOD = CRAWL_WIDTH_FIRST_METHOD
+
+        pomp.pump(DummyWidthCrawler())
+
+        assert_equal(set([item.url for item in road.collection]), set([
+            'http://python.org/1',
+            'http://python.org/1/trash',
+            'http://python.org/2',
+        ]))

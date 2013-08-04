@@ -6,7 +6,6 @@ Base class
     All this class must be subclassed
 """
 import logging
-
 import defer
 
 
@@ -41,6 +40,11 @@ class BaseCrawler(object):
 
     - ``depth first`` is pomp.core.base.CRAWL_DEPTH_FIRST_METHOD (default)
     - ``width first`` is pomp.core.base.CRAWL_WIDTH_FIRST_METHOD
+
+    :note:
+        If engine used queue for requests processing
+        the ```CRAWL_METHOD``` is ignored. And ```ENTRY_REQUESTS```
+        not required
     """
     ENTRY_REQUESTS = None
     CRAWL_METHOD = CRAWL_DEPTH_FIRST_METHOD
@@ -87,6 +91,27 @@ class BaseCrawler(object):
         return self._in_process != 0
 
 
+class BaseQueue(object):
+    """Queue interface
+
+    request is the task
+    """
+
+    def get_requests(self):
+        """Blocking get from queue
+
+        :rtype: instance of :class:`BaseRequest` or list of them
+        """
+        raise NotImplementedError()
+
+    def put_requests(self, requests):
+        """Blocking put to queue
+
+        :param requests: instance of :class:`BaseRequest` or list of them
+        """
+        raise NotImplementedError()
+
+
 class BaseDownloader(object):
     """Downloader interface
 
@@ -107,9 +132,6 @@ class BaseDownloader(object):
         self.response_middlewares.reverse()
 
     def process(self, urls, callback, crawler):
-        return self._lazy_process_async(urls, callback, crawler)
-
-    def _lazy_process_async(self, urls, callback, crawler):
         if not urls:
             return
 

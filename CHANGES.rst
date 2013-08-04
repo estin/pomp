@@ -8,6 +8,7 @@ Version 0.1.1
 
 Not released yet
 
+- processing requests through queue
 - better generator usage
 
 

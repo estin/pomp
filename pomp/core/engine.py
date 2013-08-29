@@ -12,6 +12,13 @@ from pomp.core.utils import iterator, DeferredList
 log = logging.getLogger('pomp.engine')
 
 
+def filter_requests(requests):
+    return filter(
+        lambda x: True if x else False,
+        iterator(requests)
+    )
+
+
 class Pomp(object):
     """Configuration object
 
@@ -101,14 +108,12 @@ class Pomp(object):
             )
 
         if self.queue:
-
             # if ENTRY_REQUESTS produce new requests
             # put them to queue
             if next_requests:
-                next_requests = list(next_requests)
-                self.queue.put_requests(
-                    list(filter(None, iterator(next_requests)))  # fire
-                )
+                filtered = list(filter_requests(next_requests))  # fire
+                if filtered:
+                    self.queue.put_requests(filtered)
 
             # queue processing loop
             while True:
@@ -132,9 +137,9 @@ class Pomp(object):
                 )
 
                 # put new requests to queue
-                self.queue.put_requests(
-                    list(filter(None, iterator(next_requests)))  # fire
-                )
+                filtered = list(filter_requests(next_requests))  # fire
+                if filtered:
+                    self.queue.put_requests(filtered)
 
         else:  # recursive process
             if not crawler.is_depth_first():

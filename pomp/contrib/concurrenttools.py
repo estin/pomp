@@ -3,7 +3,6 @@ Concurrent downloaders and middlewares for fetching urls by standard
 `concurrent` package for python3
 """
 import logging
-import operator
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import defer
@@ -32,18 +31,20 @@ class ConcurrentUrllibDownloader(UrllibDownloader):
 
     def get(self, requests):
         future_to_defer = {}
+
+        # configure futures and yield it
         for request in requests:
             d = defer.Deferred()
             future = self.executor.submit(self._fetch, request)
             future_to_defer[future] = (request, d)
-        try:
-            return map(operator.itemgetter(1), future_to_defer.values())
-        finally:
-            for future in as_completed(future_to_defer):
-                request, d = future_to_defer[future]
-                try:
-                    response = future.result()
-                except Exception as e:
-                    d.callback(BaseDownloadException(request, exception=e))
-                else:
-                    d.callback(response)
+            yield d
+
+        # get futures result
+        for future in as_completed(future_to_defer):
+            request, d = future_to_defer[future]
+            try:
+                response = future.result()
+            except Exception as e:
+                d.callback(BaseDownloadException(request, exception=e))
+            else:
+                d.callback(response)

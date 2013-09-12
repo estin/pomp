@@ -8,6 +8,7 @@ Version 0.1.1
 
 Not released yet
 
+- concurrenttools change try/finally to generator behavior
 - processing requests through queue
 - better generator usage
 

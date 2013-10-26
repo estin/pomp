@@ -8,6 +8,7 @@ Version 0.1.1
 
 Not released yet
 
+- bugfix `depth first` method
 - concurrenttools change try/finally to generator behavior
 - processing requests through queue
 - better generator usage

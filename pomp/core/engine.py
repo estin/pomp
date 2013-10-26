@@ -64,11 +64,13 @@ class Pomp(object):
         else:  # execute requests by `witdh first` or `depth first` methods
             if crawler.is_depth_first():
                 if next_requests:
-                    self.downloader.process(
+                    # next recursion step
+                    next_requests = self.downloader.process(
                         iterator(next_requests),
                         self.response_callback,
                         crawler
                     )
+                    self._call_next_requests(next_requests, crawler)
                 else:
                     if not self.stoped and not crawler.in_process():
                         self._stop(crawler)

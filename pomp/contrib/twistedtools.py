@@ -32,11 +32,8 @@ class TwistedDownloader(BaseDownloader):
         self.timeout = timeout
 
     def get(self, requests):
-        responses = []
         for request in iterator(requests):
-            response = self._fetch(request)
-            responses.append(response)
-        return responses
+            yield self._fetch(request)
 
     def _fetch(self, request):
         d = self.agent.request(

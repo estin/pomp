@@ -59,18 +59,24 @@ class Pomp(object):
         # get next requests
         next_requests = crawler.next_requests(response)
 
-        if self.queue:  # return request for queue get/put loop
-            return next_requests
+        if self.queue:
+            return next_requests  # return requests to pass through queue
         else:  # execute requests by `witdh first` or `depth first` methods
             if crawler.is_depth_first():
                 if next_requests:
+
                     # next recursion step
                     next_requests = self.downloader.process(
                         iterator(next_requests),
                         self.response_callback,
                         crawler
                     )
-                    self._call_next_requests(next_requests, crawler)
+
+                    self._sync_or_async(
+                        next_requests,
+                        crawler,
+                        self._on_next_requests
+                    )
                 else:
                     if not self.stoped and not crawler.in_process():
                         self._stop(crawler)
@@ -84,7 +90,6 @@ class Pomp(object):
 
         :param crawler: crawler to execute :class:`pomp.core.base.BaseCrawler`
         """
-
         log.info('Prepare downloader: %s', self.downloader)
         self.downloader.prepare()
 
@@ -110,42 +115,22 @@ class Pomp(object):
             )
 
         if self.queue:
-            # if ENTRY_REQUESTS produce new requests
-            # put them to queue
-            if next_requests:
-                filtered = list(filter_requests(next_requests))  # fire
-                if filtered:
-                    self.queue.put_requests(filtered)
+            if not next_requests:
+                # empty request - get it from queue
+                next_requests = self._queue_get_requests()
 
-            # queue processing loop
-            while True:
-
-                # wait requests from queue
-                try:
-                    requests = self.queue.get_requests()
-                except Exception:
-                    log.exception('On get requests from %s', self.queue)
-                    raise
-
-                if self.stop_on_empty_queue and not requests:
-                    log.info('Queue empty - STOP')
-                    break
-
-                # process request from queue
-                next_requests = self.downloader.process(
-                    iterator(requests),
-                    self.response_callback,
-                    crawler
-                )
-
-                # put new requests to queue
-                filtered = list(filter_requests(next_requests))  # fire
-                if filtered:
-                    self.queue.put_requests(filtered)
-
+            self._sync_or_async(
+                next_requests,
+                crawler,
+                self._on_next_requests
+            )
         else:  # recursive process
             if not crawler.is_depth_first():
-                self._call_next_requests(next_requests, crawler)
+                self._sync_or_async(
+                    next_requests,
+                    crawler,
+                    self._on_next_requests
+                )
             else:
                 # is width first method
                 # execute generator
@@ -153,12 +138,12 @@ class Pomp(object):
                     list(next_requests)  # fire generator
         return self.stop_deferred
 
-    def _call_next_requests(self, next_requests, crawler):
+    def _sync_or_async(self, next_requests, crawler, callback):
         # separate deferred and regular requests
         # fire generator
         deferreds = []
         other = []
-        for r in filter(None, next_requests):
+        for r in filter_requests(next_requests):
             if isinstance(r, defer.Deferred):
                 deferreds.append(r)
             else:
@@ -166,24 +151,61 @@ class Pomp(object):
 
         if deferreds:  # async behavior
             d = DeferredList(deferreds)
-            d.add_callback(self._on_next_requests, crawler)
+            d.add_callback(callback, crawler)
+            return d
 
         if other:  # sync behavior
-            self._on_next_requests(other, crawler)
+            return callback(other, crawler)
 
-    def _on_next_requests(self, next_requests, crawler):
+    def _do(self, requests, crawler):
         # execute request by downloader
-        for requests in filter(None, next_requests):
+        for req in filter_requests(requests):
             _requests = self.downloader.process(
-                iterator(requests),
+                iterator(req),
                 self.response_callback,
                 crawler
             )
+            self._sync_or_async(
+                _requests,
+                crawler,
+                self._on_next_requests
+            )
 
-            self._call_next_requests(_requests, crawler)
+    def _on_next_requests(self, next_requests, crawler):
+        if self.queue:
+            # if queue then all request must pass through it
+            # first put request to queue for others crawler nodes
+            for requests in filter_requests(next_requests):
+                filtered = list(filter_requests(requests))  # fire
+                if filtered:
+                    self.queue.put_requests(filtered)
 
-        if not self.stoped and not crawler.in_process():
+            # others crawler nodes will get request from common queue
+            # pass
+
+            # now get from queue
+            try:
+                next_requests = self.queue.get_requests()
+            except Exception:
+                log.exception('On get requests from %s', self.queue)
+                raise
+
+            reason = 'queue is empty'
+            if isinstance(next_requests, defer.Deferred):
+                next_requests.add_callback(self._check_stop, crawler, reason)
+            else:
+                self._check_stop(next_requests, crawler, reason)
+            self._sync_or_async(next_requests, crawler, self._do)
+        else:
+            # execute recursive
+            self._do(next_requests, crawler)
+            self._check_stop(None, crawler, 'recursion ended')
+
+    def _check_stop(self, request, crawler, reason):
+        if not self.stoped and not request and not crawler.in_process():
+            log.info('STOP by reason: %s', reason)
             self._stop(crawler)
+        return request
 
     def _stop(self, crawler):
         self.stoped = True

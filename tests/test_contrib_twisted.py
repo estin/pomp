@@ -8,7 +8,9 @@ try:
 except ImportError:
     raise SkipTest('twisted not installed')
 
-from pomp.core.base import BaseDownloadException
+import defer as dfr
+
+from pomp.core.base import BaseDownloadException, BaseQueue
 from pomp.core.engine import Pomp
 from pomp.contrib.twistedtools import TwistedDownloader, TwistedHttpRequest
 
@@ -18,6 +20,8 @@ from mockserver import HttpServer, make_sitemap
 
 
 logging.basicConfig(level=logging.DEBUG)
+
+log = logging.getLogger(__name__)
 
 
 class TestContribTiwsted(object):
@@ -139,6 +143,77 @@ class TestContribTiwsted(object):
             e = collect_middleware.exceptions[0]
             assert isinstance(e, BaseDownloadException)
             assert isinstance(e.exception, defer.CancelledError)
+
+        done_defer.addCallback(check)
+        return done_defer
+
+    @deferred(timeout=2.0)
+    def test_deferred_queue(self):
+
+        class DeferredQueue(BaseQueue):
+
+            def __init__(self):
+                self.requests = []
+
+            def get_requests(self):
+                d = dfr.Deferred()
+
+                def fire(f):
+                    log.debug(
+                        "Fire on queue:%s len: %s",
+                        f,
+                        len(self.requests),
+                    )
+                    try:
+                        f.callback(self.requests.pop())
+                    except IndexError:
+                        log.debug("Queue empty")
+                        f.callback(None)  # empty queue
+
+                reactor.callLater(0.01, fire, d)
+                return d
+
+            def put_requests(self, request):
+                log.debug("Put to queue:%s", request)
+                self.requests.append(request)
+
+        queue = DeferredQueue()
+
+        req_resp_midlleware = RequestResponseMiddleware(
+            prefix_url=self.httpd.location,
+            request_factory=TwistedHttpRequest,
+        )
+        collect_middleware = CollectRequestResponseMiddleware()
+
+        downloader = TwistedDownloader(
+            reactor,
+            timeout=0.5,
+            middlewares=[collect_middleware]
+        )
+
+        downloader.middlewares.insert(0, req_resp_midlleware)
+
+        pomp = Pomp(
+            downloader=downloader,
+            pipelines=[PrintPipeline()],
+            queue=queue,
+        )
+
+        class Crawler(DummyCrawler):
+            ENTRY_REQUESTS = '/root'
+
+        done_defer = defer.Deferred()
+        d = pomp.pump(Crawler())
+
+        d.add_callback(done_defer.callback)
+        print(set(self.httpd.sitemap.keys()))
+
+        def check(x):
+            assert_set_equal(
+                set([r.url.replace(self.httpd.location, '')
+                    for r in collect_middleware.requests]),
+                set(self.httpd.sitemap.keys())
+            )
 
         done_defer.addCallback(check)
         return done_defer

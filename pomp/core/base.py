@@ -98,14 +98,15 @@ class BaseQueue(object):
     """
 
     def get_requests(self):
-        """Blocking get from queue
+        """Get from queue
 
-        :rtype: instance of :class:`BaseRequest` or list of them
+        :rtype: instance of :class:`BaseRequest` or `defer.Deferred`
+                or list of them
         """
         raise NotImplementedError()
 
     def put_requests(self, requests):
-        """Blocking put to queue
+        """Put to queue
 
         :param requests: instance of :class:`BaseRequest` or list of them
         """

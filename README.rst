@@ -12,7 +12,7 @@ Features:
 
  - `urllib`_
  - `Twisted`_ by package only for py2.x
- - `futures`_ standard for py3.2+ or by backport package
+ - `concurrent.futures`_ standard for py3.2+ or by backport package
  - yours own method
 
 * content parsing by yours own method
@@ -22,8 +22,11 @@ Roadmap:
 
 * `gevent`_ support
 * `Tornado`_ support
+* `GAE`_ support
 
 `Pomp examples`_
+
+`Pomp docs`_
 
 Pomp is written and maintained by Evgeniy Tatarkin and is licensed under BSD license.
 
@@ -32,6 +35,8 @@ Pomp is written and maintained by Evgeniy Tatarkin and is licensed under BSD lic
 .. _Twisted: http://twistedmatrix.com/
 .. _gevent: http://www.gevent.org/
 .. _Tornado: http://www.tornadoweb.org/
-.. _futures: http://pythonhosted.org/futures/
+.. _concurrent.futures: http://pythonhosted.org/futures/
+.. _GAE: https://developers.google.com/appengine/
 .. _Pomp examples:
    https://bitbucket.org/estin/pomp/src/tip/examples?at=default
+.. _Pomp docs: http://pomp.readthedocs.org

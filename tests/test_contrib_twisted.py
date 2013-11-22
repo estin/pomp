@@ -36,9 +36,7 @@ class TestContribTiwsted(object):
         stop_reactor()
         cls.httpd.stop()
 
-    @deferred(timeout=1.0)
-    def test_downloader(self):
-
+    def do_simple_test(self, queue=None):
         req_resp_middleware = RequestResponseMiddleware(
             prefix_url=self.httpd.location,
             request_factory=TwistedHttpRequest,
@@ -52,6 +50,7 @@ class TestContribTiwsted(object):
         pomp = Pomp(
             downloader=downloader,
             pipelines=[PrintPipeline()],
+            queue=queue,
         )
 
         class Crawler(DummyCrawler):
@@ -71,6 +70,10 @@ class TestContribTiwsted(object):
 
         done_defer.addCallback(check)
         return done_defer
+
+    @deferred(timeout=1.0)
+    def test_downloader(self):
+        return self.do_simple_test()
 
     @deferred(timeout=1.0)
     def test_exceptions(self):
@@ -147,7 +150,7 @@ class TestContribTiwsted(object):
         done_defer.addCallback(check)
         return done_defer
 
-    @deferred(timeout=2.0)
+    @deferred(timeout=1.0)
     def test_deferred_queue(self):
 
         class DeferredQueue(BaseQueue):
@@ -177,43 +180,4 @@ class TestContribTiwsted(object):
                 log.debug("Put to queue:%s", request)
                 self.requests.append(request)
 
-        queue = DeferredQueue()
-
-        req_resp_midlleware = RequestResponseMiddleware(
-            prefix_url=self.httpd.location,
-            request_factory=TwistedHttpRequest,
-        )
-        collect_middleware = CollectRequestResponseMiddleware()
-
-        downloader = TwistedDownloader(
-            reactor,
-            timeout=0.5,
-            middlewares=[collect_middleware]
-        )
-
-        downloader.middlewares.insert(0, req_resp_midlleware)
-
-        pomp = Pomp(
-            downloader=downloader,
-            pipelines=[PrintPipeline()],
-            queue=queue,
-        )
-
-        class Crawler(DummyCrawler):
-            ENTRY_REQUESTS = '/root'
-
-        done_defer = defer.Deferred()
-        d = pomp.pump(Crawler())
-
-        d.add_callback(done_defer.callback)
-        print(set(self.httpd.sitemap.keys()))
-
-        def check(x):
-            assert_set_equal(
-                set([r.url.replace(self.httpd.location, '')
-                    for r in collect_middleware.requests]),
-                set(self.httpd.sitemap.keys())
-            )
-
-        done_defer.addCallback(check)
-        return done_defer
+        return self.do_simple_test(queue=DeferredQueue())

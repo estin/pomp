@@ -32,17 +32,12 @@ class Pomp(object):
     :param pipelines: list of item pipelines
                       :class:`pomp.core.base.BasePipeline`
     :param queue: instance of :class:`pomp.core.base.BaseQueue`
-    :param stop_on_empty_queue: stop processing if queue is empty
     """
 
-    def __init__(
-            self, downloader, pipelines=None,
-            queue=None, stop_on_empty_queue=True):
-
+    def __init__(self, downloader, pipelines=None, queue=None):
         self.downloader = downloader
         self.pipelines = pipelines or tuple()
         self.queue = queue
-        self.stop_on_empty_queue = stop_on_empty_queue
 
     def response_callback(self, crawler, response):
 

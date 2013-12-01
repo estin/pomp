@@ -59,7 +59,6 @@ def crawler_worker(crawler_class, source_queue, stop_event):
         downloader=dnl(timeout=3),
         pipelines=[],
         queue=WrappedQueue(source_queue, stop_event),
-        stop_on_empty_queue=True,
     )
     pomp.pump(crawler_class())
     log.debug('Stop crawler worker: %s', pid)

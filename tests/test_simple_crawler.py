@@ -150,7 +150,6 @@ class TestSimplerCrawler(object):
                 road,
             ],
             queue=queue,
-            stop_on_empty_queue=True,
         )
 
         class DummyWidthCrawler(Crawler):

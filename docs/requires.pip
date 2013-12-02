@@ -1,2 +1,2 @@
 Jinja2==2.5
-sphinxcontrib-mockautodoc
+sphinxcontrib-mockautodoc>=0.0.dev0

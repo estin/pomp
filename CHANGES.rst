@@ -3,10 +3,19 @@ pomp changelog
 
 Here you can see the full list of changes between pomp releases.
 
-Version 0.1.1
+
+Version 0.1.2
 -------------
 
 Not released yet
+
+- utils.DeferredList works with deferred and not-deferred objects
+
+
+Version 0.1.1
+-------------
+
+Released on December 12nd 2013
 
 - urllib and twidted downloader on get method yield result
 - bugfix `depth first` method

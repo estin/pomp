@@ -134,23 +134,9 @@ class Pomp(object):
         return self.stop_deferred
 
     def _sync_or_async(self, next_requests, crawler, callback):
-        # separate deferred and regular requests
-        # fire generator
-        deferreds = []
-        other = []
-        for r in filter_requests(next_requests):
-            if isinstance(r, defer.Deferred):
-                deferreds.append(r)
-            else:
-                other.append(r)
-
-        if deferreds:  # async behavior
-            d = DeferredList(deferreds)
-            d.add_callback(callback, crawler)
-            return d
-
-        if other:  # sync behavior
-            return callback(other, crawler)
+        d = DeferredList([r for r in filter_requests(next_requests)])
+        d.add_callback(callback, crawler)
+        return d
 
     def _do(self, requests, crawler):
         # execute request by downloader

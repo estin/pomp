@@ -145,8 +145,8 @@ class TestContribTiwsted(object):
             e = collect_middleware.exceptions[0]
             assert isinstance(e, BaseDownloadException)
 
-            ## twisted _newcleint can raise ResponseNeverReceived
-            ## next assert works only for `oldclient`
+            # twisted _newcleint can raise ResponseNeverReceived
+            # next assert works only for `oldclient`
             # assert isinstance(e.exception, defer.CancelledError)
 
         done_defer.addCallback(check)

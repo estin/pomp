@@ -9,6 +9,8 @@ Version 0.1.2
 
 Not released yet
 
+- twistedtools on request timeout can raise ResponseNeverReceived or
+  others (see _newcleint twisted api)...
 - utils.DeferredList works with deferred and not-deferred objects
 
 

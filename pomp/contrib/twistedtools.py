@@ -45,6 +45,7 @@ class TwistedDownloader(BaseDownloader):
 
         # Set timeout to request
         # on timeout will be errorBack with CancelledError
+        # or ResponseNeverReceived api/twisted.web._newclient.html
         watchdog = self.reactor.callLater(self.timeout, d.cancel)
 
         def _reset_timeout(res):

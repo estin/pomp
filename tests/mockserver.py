@@ -47,8 +47,6 @@ def simple_app(environ, start_response):
 
 
 def sitemap_app(environ, start_response):
-    #setup_testing_defaults(environ)
-
     status = '200 OK'
     headers = [('Content-type', 'text/plain')]
 

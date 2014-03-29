@@ -101,7 +101,6 @@ class TestContribTiwsted(object):
         d = pomp.pump(Crawler())
 
         d.add_callback(done_defer.callback)
-        #d.add_callback(done_defer.callback)
 
         def check(x):
             assert len(collect_middleware.exceptions) == 1

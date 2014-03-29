@@ -28,6 +28,8 @@ Roadmap:
 
 `Pomp docs`_
 
+`Pomp CI tests`_
+
 Pomp is written and maintained by Evgeniy Tatarkin and is licensed under BSD license.
 
 .. _urllib: http://docs.python.org/3.3/library/urllib.html
@@ -40,3 +42,4 @@ Pomp is written and maintained by Evgeniy Tatarkin and is licensed under BSD lic
 .. _Pomp examples:
    https://bitbucket.org/estin/pomp/src/tip/examples?at=default
 .. _Pomp docs: http://pomp.readthedocs.org
+.. _Pomp CI tests: https://drone.io/bitbucket.org/estin/pomp

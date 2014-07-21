@@ -31,12 +31,12 @@ Example pipelines for filtering items with length less the 10 symbols and
 printing sentence::
 
     class FilterPipeline(BasePipeline):
-        def process(self, item):
+        def process(self, crawler, item):
             # None - skip item for following processing
             return None if len(item) < 10 else item
 
     class PrintPipeline(BasePipeline):
-        def process(self, item):
+        def process(self, crawler, item):
             print('Sentence:', item, ' length:', len(item))
             return item # return item for following processing
 

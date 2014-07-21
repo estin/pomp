@@ -5,8 +5,12 @@
 import os
 import sys
 import time
-import queue
 import logging
+
+try:
+    import Queue as queue
+except ImportError:
+    import queue
 
 from pomp.core.base import BaseQueue, BaseCrawler
 from pomp.core.engine import Pomp

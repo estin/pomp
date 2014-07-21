@@ -129,10 +129,8 @@ class LJFriendSpider(BaseCrawler):
     def next_requests(self, response):
         # when users parsed pomp call next_url method
         # for getting next targets
-        def _urls():
-            if self._next_requests:
-                yield self._next_requests.pop()
-        return list(_urls())
+        if self._next_requests:
+            yield self._next_requests.pop()
 
 
 if __name__ == '__main__':
@@ -142,7 +140,7 @@ if __name__ == '__main__':
         from pomp.contrib.concurrenttools import ConcurrentUrllibDownloader \
             as dnl
     except ImportError:
-        from pomp.contrib import ThreadedDownloader as dnl
+        from pomp.contrib.urllibtools import ThreadedDownloader as dnl
 
     middlewares = [LXMLDownloaderMiddleware(encoding='utf-8')]
 

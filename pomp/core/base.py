@@ -126,6 +126,9 @@ class BaseDownloader(object):
     def __init__(self, middlewares=None):
         self.middlewares = middlewares or []
 
+        if isinstance(self.middlewares, tuple):
+            self.middlewares = list(self.middlewares)
+
     def prepare(self):
         """Prepare downloader before start processing"""
         self.request_middlewares = self.middlewares

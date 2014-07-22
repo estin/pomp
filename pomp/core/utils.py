@@ -1,5 +1,9 @@
+import sys
 import types
 import defer
+
+
+PY3 = False if sys.version_info < (3, 0) else True
 
 
 def iterator(var):

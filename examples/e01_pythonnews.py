@@ -42,6 +42,7 @@ class PrintPipeline(BasePipeline):
 
     def process(self, crawler, item):
         print(item)
+        return item
 
 
 if __name__ == '__main__':

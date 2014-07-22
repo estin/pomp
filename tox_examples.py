@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding: utf-8
 import sys
 try:
     from StringIO import StringIO
@@ -10,7 +11,7 @@ FOR_TESTING = (
     './docs/examples/minimalapp.py',
     './docs/examples/customdowloader.py',
     './examples/e01_pythonnews.py',
-    './examples/e02_livejournal.py',
+    './examples/e02_dmoz.py',
     './examples/e03_queue.py',
 )
 

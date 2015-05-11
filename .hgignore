@@ -9,3 +9,5 @@ html_docs/
 docs/_build/
 build/
 *.csv
+.coverage
+.coveralls.yml

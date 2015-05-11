@@ -1,0 +1,7 @@
+[run]
+parallel=True
+
+[report]
+omit=
+    .tox/*
+    /usr/local/lib/*

@@ -28,7 +28,43 @@ Roadmap:
 
 `Pomp docs`_
 
-`Pomp CI tests`_
+Continuous integration status by drone.io:
+
+.. image:: https://drone.io/bitbucket.org/estin/pomp/status.png
+    :target: https://drone.io/bitbucket.org/estin/pomp/latest
+    :alt: Latest CI test
+
+.. image:: https://landscape.io/github/estin/pomp/master/landscape.svg?style=flat
+    :target: https://landscape.io/github/estin/pomp/master
+    :alt: Code Health
+
+.. image:: https://coveralls.io/repos/estin/pomp/badge.svg
+    :target: https://coveralls.io/r/estin/pomp
+    :alt: Coverage
+
+PyPI status:
+
+.. image:: https://pypip.in/v/pomp/badge.png
+    :target: https://crate.io/packages/pomp/
+    :alt: Latest PyPI version
+
+.. image:: https://pypip.in/d/pomp/badge.png
+    :target: https://crate.io/packages/pomp/
+    :alt: Number of PyPI downloads
+
+.. image:: https://pypip.in/wheel/pomp/badge.svg
+    :target: https://pypi.python.org/pypi/pomp/
+    :alt: Have wheel
+
+.. image:: https://pypip.in/license/pomp/badge.svg
+    :target: https://pypi.python.org/pypi/pomp/
+    :alt: License
+
+Docs status:
+
+.. image:: https://readthedocs.org/projects/pomp/badge/?version=latest
+    :target: https://readthedocs.org/projects/pomp/?badge=latest
+    :alt: Documentation Status
 
 Pomp is written and maintained by Evgeniy Tatarkin and is licensed under BSD license.
 
@@ -42,4 +78,3 @@ Pomp is written and maintained by Evgeniy Tatarkin and is licensed under BSD lic
 .. _Pomp examples:
    https://bitbucket.org/estin/pomp/src/tip/examples?at=default
 .. _Pomp docs: http://pomp.readthedocs.org
-.. _Pomp CI tests: https://drone.io/bitbucket.org/estin/pomp

@@ -12,4 +12,4 @@ echo "service_name: drone.io" > .coveralls.yml
 echo "repo_token: $COVERALLS_REPO_TOKEN" >> .coveralls.yml
 
 # post coverage report to coveralls.io
-coveralls
+coveralls --nogit

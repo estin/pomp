@@ -38,7 +38,7 @@ Continuous integration status by drone.io:
     :target: https://landscape.io/github/estin/pomp/master
     :alt: Code Health
 
-.. image:: https://coveralls.io/repos/estin/pomp/badge.svg
+.. image:: https://coveralls.io/repos/estin/pomp/badge.png
     :target: https://coveralls.io/r/estin/pomp
     :alt: Coverage
 
@@ -52,11 +52,11 @@ PyPI status:
     :target: https://crate.io/packages/pomp/
     :alt: Number of PyPI downloads
 
-.. image:: https://pypip.in/wheel/pomp/badge.svg
+.. image:: https://pypip.in/wheel/pomp/badge.png
     :target: https://pypi.python.org/pypi/pomp/
     :alt: Have wheel
 
-.. image:: https://pypip.in/license/pomp/badge.svg
+.. image:: https://pypip.in/license/pomp/badge.png
     :target: https://pypi.python.org/pypi/pomp/
     :alt: License
 

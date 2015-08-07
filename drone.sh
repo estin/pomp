@@ -4,8 +4,8 @@ pip install tox coverage
 tox -e py27,py33,docs,py27examples,py33examples,qa
 coverage combine
 
-# forked python-coverage with --nogit option
-pip install git+https://github.com/estin/python-coveralls.git
+# python-coveralls with --nogit option
+pip install git+https://github.com/z4r/python-coveralls.git
 
 # prepare .coveralls.yml config
 echo "service_name: drone.io" > .coveralls.yml

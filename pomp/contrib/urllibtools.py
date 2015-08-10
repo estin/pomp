@@ -3,6 +3,7 @@ Simple downloaders and middlewares for fetching data by standard
 `urlopen` function from `urllib` package for python3.x
 or `urllib2` for python2.7+
 """
+import sys
 try:
     from urllib.request import urlopen, Request
 except ImportError:
@@ -39,7 +40,11 @@ class UrllibDownloader(BaseDownloader):
             return UrllibHttpResponse(request, res)
         except Exception as e:
             log.exception('Exception on %s', request)
-            return BaseDownloadException(request, exception=e)
+            return BaseDownloadException(
+                request,
+                exception=e,
+                exc_info=sys.exc_info(),
+            )
 
 
 class ThreadedDownloader(UrllibDownloader):

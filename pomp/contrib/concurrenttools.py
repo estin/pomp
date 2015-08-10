@@ -2,6 +2,7 @@
 Concurrent downloaders and middlewares for fetching urls by standard
 `concurrent` package for python3
 """
+import sys
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -45,6 +46,10 @@ class ConcurrentUrllibDownloader(UrllibDownloader):
             try:
                 response = future.result()
             except Exception as e:
-                d.callback(BaseDownloadException(request, exception=e))
+                d.callback(BaseDownloadException(
+                    request,
+                    exception=e,
+                    exc_info=sys.exc_info(),
+                ))
             else:
                 d.callback(response)

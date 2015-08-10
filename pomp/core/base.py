@@ -5,6 +5,7 @@ Base class
 
     All this class must be subclassed
 """
+import sys
 import logging
 import defer
 
@@ -150,7 +151,11 @@ class BaseDownloader(object):
                         'Exception on process %s by %s', request, middleware)
                     request = None  # stop processing request by middlewares
                     self._process_exception(
-                        BaseDownloadException(request, exception=e)
+                        BaseDownloadException(
+                            request,
+                            exception=e,
+                            exc_info=sys.exc_info(),
+                        )
                     )
                 if not request:
                     break
@@ -174,7 +179,11 @@ class BaseDownloader(object):
                         'Exception on process %s by %s', response, middleware)
                     response = None  # stop processing response by middlewares
                     self._process_exception(
-                        BaseDownloadException(response, exception=e)
+                        BaseDownloadException(
+                            response,
+                            exception=e,
+                            exc_info=sys.exc_info(),
+                        )
                     )
                 if not response:
                     break
@@ -323,11 +332,13 @@ class BaseDownloadException(Exception):
 
     :param request: request raises this exception
     :param exception: original exception
+    :param exc_info: result of `sys.exc_info` call
     """
 
-    def __init__(self, request, exception):
+    def __init__(self, request, exception, exc_info=None):
         self.request = request
         self.exception = exception
+        self.exc_info = exc_info
 
     def __str__(self):
         return 'Exception on %s - %s' % (self.request, self.exception)

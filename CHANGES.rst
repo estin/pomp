@@ -3,11 +3,17 @@ pomp changelog
 
 Here you can see the full list of changes between pomp releases.
 
+Version 0.1.3
+-------------
+
+Not released yet
+
+- store result of calling `sys.exc_info` in exception instance
 
 Version 0.1.2
 -------------
 
-Not released yet
+Released at 2015-05-08
 
 - twistedtools on request timeout can raise ResponseNeverReceived or
   others (see _newcleint twisted api)...

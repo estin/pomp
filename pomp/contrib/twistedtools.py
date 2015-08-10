@@ -1,6 +1,7 @@
 """
 Simple downloaders and middlewares for fetching data by Twisted.
 """
+import sys
 import urllib
 import logging
 import defer as dfr
@@ -70,7 +71,11 @@ class TwistedDownloader(BaseDownloader):
                 failure.raiseException()
             except Exception as e:
                 log.exception('Exception on %s', request)
-                res.callback(BaseDownloadException(request, exception=e))
+                res.callback(BaseDownloadException(
+                    request,
+                    exception=e,
+                    exc_info=sys.exc_info(),
+                ))
         d.addErrback(_fire_error)
 
         return res

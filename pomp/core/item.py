@@ -22,7 +22,6 @@ class Item(OrderedDict):
         for key in sorted(fields_by_creation_counter):
             field = fields_by_creation_counter[key]
             value = _args.pop() if _args else kwargs.get(field, None)
-            print("set", key, field, value)
             super(Item, self).__setitem__(field, value)
 
     def __setattr__(self, key, value):

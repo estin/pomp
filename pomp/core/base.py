@@ -189,7 +189,18 @@ class BaseDownloader(object):
                     break
 
             if response and not is_error:
-                return callback(crawler, response)
+                try:
+                    return callback(crawler, response)
+                except Exception as e:
+                    log.exception(
+                        'Exception on response %s callback', response)
+                    self._process_exception(
+                        BaseDownloadException(
+                            response,
+                            exception=e,
+                            exc_info=sys.exc_info(),
+                        )
+                    )
 
         crawler.dive(len(requests))  # dive in
         for response in self.get(requests):

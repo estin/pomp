@@ -83,6 +83,26 @@ def test_exception_on_processing_response():
     assert_equal(len(collect_middleware.responses), 1)
 
 
+def test_exception_on_processing_response_callback():
+
+    class CrawlerWithException(Crawler):
+        def extract_items(self, *args, **kwargs):
+            raise Exception("some exception on extract items")
+
+    collect_middleware = CollectRequestResponseMiddleware()
+    pomp = Pomp(
+        downloader=DummyDownloader(middlewares=[
+            collect_middleware,
+        ]),
+    )
+
+    pomp.pump(CrawlerWithException())
+
+    assert_equal(len(collect_middleware.exceptions), 1)
+    assert_equal(len(collect_middleware.requests), 1)
+    assert_equal(len(collect_middleware.responses), 1)
+
+
 def test_exception_on_processing_exception():
 
     collect_middleware = CollectRequestResponseMiddleware()

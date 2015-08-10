@@ -8,6 +8,8 @@ Version 0.1.3
 
 Not released yet
 
+- process exception on `extract_items` and `next_requests` by downloader
+  middlewares
 - store result of calling `sys.exc_info` in exception instance
 
 Version 0.1.2
@@ -26,7 +28,7 @@ Version 0.1.1
 
 Released on December 12nd 2013
 
-- urllib and twidted downloader on get method yield result
+- urllib and twisted downloader on get method yield result
 - bugfix `depth first` method
 - concurrenttools change try/finally to generator behavior
 - processing requests through queue

@@ -1,11 +1,12 @@
 """
-Item
+Item and Field
 """
 import inspect
 from collections import OrderedDict
 
 
 class Item(OrderedDict):
+    """OrderedDict subclass"""
 
     def __init__(self, *args, **kwargs):
         # Initialize empty ordered dict

@@ -1,5 +1,5 @@
 """
-Base class
+Base classes
 
  .. note::
 
@@ -53,27 +53,28 @@ class BaseCrawler(object):
     def __init__(self):
         self._in_process = 0
 
-    def next_requests(self, page):
+    def next_requests(self, response):
         """Getting next requests for processing.
 
         Called after `extract_items` method.
 
-        :param page: the instance of :class:`BaseHttpResponse`
-        :rtype: ``None`` or one url or list of urls. If ``None`` returned
-                this mean that page have not any urls to following
-                processing
+        :param response: the instance of :class:`BaseHttpResponse`
+        :rtype: ``None`` or request or requests (instnace of
+            :class:`BaseHttpRequest` or str). If ``None`` returned
+            this mean that page have not any urls to following
+            processing
         """
-        raise NotImplementedError()
+        pass
 
     def process(self, response):
         return self.extract_items(response)
 
-    def extract_items(self, url, page):
-        """Extract items - parse page.
+    def extract_items(self, response):
+        """Extract items and next requests - parse page.
 
-        :param url: the url of downloaded page
-        :param page: the instance of :class:`BaseHttpResponse`
-        :rtype: one data item or list of items
+        :param response: the instance of :class:`BaseHttpResponse`
+        :rtype: item or items (isntance of :class:`pomp.core.item.Item`)
+            or request or requests (instance of :class:`BaseHttpRequest`)
         """
         raise NotImplementedError()
 
@@ -136,12 +137,12 @@ class BaseDownloader(object):
         self.response_middlewares = self.middlewares[:]
         self.response_middlewares.reverse()
 
-    def process(self, urls, callback, crawler):
-        if not urls:
+    def process(self, to_process, callback, crawler):
+        if not to_process:
             return
 
         requests = []
-        for request in urls:
+        for request in to_process:
 
             for middleware in self.request_middlewares:
                 try:

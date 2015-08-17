@@ -1,8 +1,13 @@
 import re
 from pomp.core.base import BaseCrawler
+from pomp.core.item import Item, Field
 
 
 python_sentence_re = re.compile('[\w\s]{0,}python[\s\w]{0,}', re.I | re.M)
+
+
+class MyItem(Item):
+    sentence = Field()
 
 
 class MyCrawler(BaseCrawler):
@@ -11,12 +16,9 @@ class MyCrawler(BaseCrawler):
 
     def extract_items(self, response):
         for i in python_sentence_re.findall(response.body.decode('utf-8')):
-            item = i.strip()
+            item = MyItem(sentence=i.strip())
             print(item)
             return item
-
-    def next_requests(self, response):
-        return None  # one page crawler, stop crawl
 
 
 if __name__ == '__main__':

@@ -8,6 +8,7 @@ Version 0.1.3
 
 Not released yet
 
+- crawler `extract_items` method can yield next requests
 - process exception on `extract_items` and `next_requests` by downloader
   middlewares
 - store result of calling `sys.exc_info` in exception instance

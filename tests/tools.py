@@ -93,6 +93,9 @@ class DummyRequest(BaseHttpRequest):
     def url(self):
         return self.request
 
+    def __repr__(self):
+        return '<DummyRequest url={s.request}>'.format(s=self)
+
 
 class DummyResponse(BaseHttpResponse):
 
@@ -107,3 +110,6 @@ class DummyResponse(BaseHttpResponse):
     @property
     def response(self):
         return self.response
+
+    def __repr__(self):
+        return '<DummyResponse on={s.req}>'.format(s=self)

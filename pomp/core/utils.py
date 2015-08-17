@@ -1,27 +1,28 @@
 import sys
 import types
+import itertools
+
 import defer
 
 
 PY3 = False if sys.version_info < (3, 0) else True
+ITERATOR_TYPES = (
+    list, tuple, set,
+    types.GeneratorType, itertools.chain,
+)
 
 
 def iterator(var):
-
-    if isinstance(var, types.GeneratorType):
+    if isinstance(var, ITERATOR_TYPES):
         return var
 
-    if isinstance(var, list) or isinstance(var, tuple):
-        return iter(var)
-
-    return iter((var,))
+    return (var,)
 
 
 def isstring(obj):
-    try:
-        return isinstance(obj, basestring)
-    except NameError:
-        return isinstance(obj, str)
+    if not PY3:
+        return isinstance(obj, basestring)  # noqa
+    return isinstance(obj, str)
 
 
 class DeferredList(defer.Deferred):

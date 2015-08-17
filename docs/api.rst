@@ -28,7 +28,7 @@ Concurrent future
 `````````````````
 
 .. automodule:: pomp.contrib.concurrenttools
-    :members: 
+    :members:
 
 
 .. _contrib-pipelines:
@@ -51,4 +51,7 @@ Interfaces
 **********
 
 .. automodule:: pomp.core.base
+    :members:
+
+.. automodule:: pomp.core.item
     :members:

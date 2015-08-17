@@ -2,11 +2,14 @@
 Engine
 """
 import types
+import itertools
 import logging
 
 import defer
 
-from pomp.core.utils import iterator, DeferredList
+from pomp.core.item import Item
+from pomp.core.base import BaseHttpRequest
+from pomp.core.utils import iterator, isstring, DeferredList
 
 
 log = logging.getLogger('pomp.engine')
@@ -40,23 +43,36 @@ class Pomp(object):
         self.queue = queue
 
     def response_callback(self, crawler, response):
-
         log.info('Process %s', response)
-        items = crawler.process(response)
+        result = crawler.process(response)
 
-        # pipe items
-        for pipe in self.pipelines:
-            items = filter(
-                None,
-                [pipe.process(crawler, i) for i in items],
+        if isinstance(result, types.GeneratorType):
+            requests_from_items = []
+            for items in result:
+                requests_from_items += self._process_result(
+                    crawler, iterator(items)
+                )
+        else:
+            requests_from_items = self._process_result(
+                crawler, iterator(result)
             )
 
-        # get next requests
-        next_requests = crawler.next_requests(response)
+        if requests_from_items:
+            # chain result of crawler extract_items and next_requests methods
+            _requests = crawler.next_requests(response)
+            if _requests:
+                next_requests = itertools.chain(
+                    requests_from_items,
+                    iterator(_requests),
+                )
+            else:
+                next_requests = requests_from_items
+        else:
+            next_requests = crawler.next_requests(response)
 
         if self.queue:
             return next_requests  # return requests to pass through queue
-        else:  # execute requests by `witdh first` or `depth first` methods
+        else:  # execute requests by `width first` or `depth first` methods
             if crawler.is_depth_first():
                 if next_requests:
 
@@ -79,6 +95,47 @@ class Pomp(object):
                 return None  # end of recursion
             else:
                 return next_requests
+
+    def _process_result(self, crawler, items):
+        # requests may be yield with items
+        next_requests = filter(
+            lambda i: isinstance(i, BaseHttpRequest) or isstring(i),
+            items,
+        )
+
+        # filter items by instance type
+        items = filter(
+            lambda i: isinstance(i, Item),
+            items,
+        )
+
+        # pipe items
+        for pipe in self.pipelines:
+            items = list(filter(
+                None,
+                map(
+                    lambda i: pipe.process(crawler, i),
+                    items
+                ),
+            ))
+
+        # if crawler without queue and with DEEP_FIRST strategy,
+        # then process next requests yielded from crawler.extract_items
+        if not self.queue and crawler.is_depth_first() and next_requests:
+            # next recursion step
+            next_requests = self.downloader.process(
+                next_requests,
+                self.response_callback,
+                crawler,
+            )
+
+            self._sync_or_async(
+                next_requests,
+                crawler,
+                self._on_next_requests,
+            )
+
+        return next_requests
 
     def pump(self, crawler):
         """Start crawling

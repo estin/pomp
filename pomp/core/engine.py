@@ -98,10 +98,10 @@ class Pomp(object):
 
     def _process_result(self, crawler, items):
         # requests may be yield with items
-        next_requests = filter(
+        next_requests = list(filter(
             lambda i: isinstance(i, BaseHttpRequest) or isstring(i),
             items,
-        )
+        ))
 
         # filter items by instance type
         items = filter(
@@ -169,7 +169,11 @@ class Pomp(object):
         if self.queue:
             if not next_requests:
                 # empty request - get it from queue
-                next_requests = self._queue_get_requests()
+                next_requests = self.downloader.process(
+                    iterator(self.queue.get_requests()),
+                    self.response_callback,
+                    crawler
+                )
 
             self._sync_or_async(
                 next_requests,

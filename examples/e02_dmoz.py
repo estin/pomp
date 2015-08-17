@@ -44,7 +44,7 @@ class StatisticMiddleware(BaseDownloaderMiddleware):
         self.exceptions += 1
         return exception
 
-    def __unicode__(self):
+    def __str__(self):
         return 'requests/responses/exceptions ' \
             '= {s.requests}/{s.responses}/{s.exceptions}' \
             .format(s=self)
@@ -73,7 +73,7 @@ class WebsiteItem(Item):
     url = Field()
     description = Field()
 
-    def __unicode__(self):
+    def __str__(self):
         return u'{s.name}\nurl: {s.url}\ndesc: {s.description}'.format(s=self)
 
 
@@ -100,7 +100,6 @@ class DmozSpider(BaseCrawler):
     def __init__(self):
         super(DmozSpider, self).__init__()
         self._parsed_urls = [self.ENTRY_REQUESTS]
-        self._next_requests = []
 
     def extract_items(self, response):
 
@@ -120,12 +119,8 @@ class DmozSpider(BaseCrawler):
         for link in response.tree.xpath(self.NEXT_URLS_XPATH):
             url = urljoin(self.BASE_URL, link.get('href'))
             if url not in self._parsed_urls:
-                self._next_requests.append(url)
                 self._parsed_urls.append(url)
-
-    def next_requests(self, response):
-        if self._next_requests:
-            yield self._next_requests.pop()
+                yield url
 
 
 if __name__ == '__main__':

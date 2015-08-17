@@ -14,11 +14,22 @@ except ImportError:
 
 from pomp.core.base import BaseQueue, BaseCrawler
 from pomp.core.engine import Pomp
+from pomp.core.item import Item, Field
 from pomp.contrib.urllibtools import UrllibDownloader as dnl
 
 
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 log = logging.getLogger(__name__)
+
+
+class ParsedItem(Item):
+    worker = Field()
+    response = Field()
+
+    def __str__(self):
+        return '<ParsedItem by {s.worker} from {s.response.request}>'.format(
+            s=self
+        )
 
 
 class WrappedQueue(BaseQueue):
@@ -27,6 +38,7 @@ class WrappedQueue(BaseQueue):
         self.pid = os.getpid()
         self.source_queue = source_queue
         self.stop_event = stop_event
+        log.debug('Queue INITED <%s> on worker: %s', self, self.pid)
 
     def get_requests(self):
         while True:
@@ -48,12 +60,9 @@ class WrappedQueue(BaseQueue):
 class Crawler(BaseCrawler):
 
     def extract_items(self, response):
-        # TODO
-        return
-
-    def next_requests(self, response):
-        # TODO
-        return
+        item = ParsedItem(worker=os.getpid(), response=response)
+        log.debug('ITEM - %s', item)
+        yield item
 
 
 def crawler_worker(crawler_class, source_queue, stop_event):

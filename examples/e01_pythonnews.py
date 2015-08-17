@@ -18,7 +18,7 @@ class PythonNewsItem(Item):
     title = Field()
     published = Field()
 
-    def __repr__(self):
+    def __str__(self):
         return '%s\n\t%s\n' % (
             self.title,
             self.published,

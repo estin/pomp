@@ -36,6 +36,7 @@ class UrllibDownloader(BaseDownloader):
 
     def _fetch(self, request):
         try:
+            log.info("Fetch %s", request)
             res = urlopen(request, timeout=self.timeout)
             return UrllibHttpResponse(request, res)
         except Exception as e:
@@ -70,6 +71,9 @@ class UrllibHttpRequest(Request, BaseHttpRequest):
     def url(self):
         return self.get_full_url()
 
+    def __str__(self):
+        return '<UrllibRequest {s.url}>'.format(s=self)
+
 
 class UrllibHttpResponse(BaseHttpResponse):
     """Adapter for urllib response to
@@ -89,6 +93,9 @@ class UrllibHttpResponse(BaseHttpResponse):
     @property
     def response(self):
         return self.resp
+
+    def __str__(self):
+        return '<UrllibResponse on {s.request}>'.format(s=self)
 
 
 class UrllibAdapterMiddleware(BaseDownloaderMiddleware):

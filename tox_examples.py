@@ -17,7 +17,7 @@ FOR_TESTING = (
 )
 
 
-if sys.version_info >= (3, 3):
+if sys.version_info >= (3, 4):
     sys.path.append(
         os.path.join(os.path.dirname(__file__), 'examples')
     )

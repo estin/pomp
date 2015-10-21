@@ -1,6 +1,6 @@
 """
 EXPERIMENTAL asyncio support.
-For python >= 3.3, requires: aiohttp, lxml
+For python >= 3.4, requires: aiohttp, lxml
 
 e02_dmoz.py on aiohttp downloader
 """

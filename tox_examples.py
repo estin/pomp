@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
+import os
 import sys
 try:
     from StringIO import StringIO
@@ -14,6 +15,15 @@ FOR_TESTING = (
     './examples/e02_dmoz.py',
     './examples/e03_queue.py',
 )
+
+
+if sys.version_info >= (3, 3):
+    sys.path.append(
+        os.path.join(os.path.dirname(__file__), 'examples')
+    )
+    FOR_TESTING += (
+        './examples/e04_aiohttp.py',
+    )
 
 
 class Capturing(list):

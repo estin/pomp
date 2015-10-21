@@ -85,7 +85,7 @@ def populate_worker(source_queue, stop_event):
 
     for url in ['http://ya.ru/', 'http://google.com/', ]:
         log.debug('wait')
-        time.sleep(3)
+        time.sleep(1)
         que.put_requests(UrllibHttpRequest(url))
 
     # stop crawler workers

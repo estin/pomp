@@ -10,34 +10,27 @@ except ImportError:
     from urllib2 import urlopen, Request
 
 import logging
-from multiprocessing.pool import ThreadPool
 
-from pomp.core.base import BaseDownloader, BaseHttpRequest, \
-    BaseHttpResponse, BaseDownloaderMiddleware, BaseDownloadException
+from pomp.core.base import (
+    BaseDownloadWorker, BaseDownloader,
+    BaseHttpRequest, BaseHttpResponse, BaseDownloaderMiddleware,
+    BaseDownloadException,
+)
 from pomp.core.utils import iterator
 
 
 log = logging.getLogger('pomp.contrib.urllib')
 
 
-class UrllibDownloader(BaseDownloader):
-    """Simplest downloader
+class UrllibDownloadWorker(BaseDownloadWorker):
 
-    :param timeout: request timeout in seconds
-    """
-
-    def __init__(self, timeout=5, middlewares=None):
-        super(UrllibDownloader, self).__init__(middlewares=middlewares)
+    def __init__(self, timeout=5):
         self.timeout = timeout
 
-    def get(self, requests):
-        for request in iterator(requests):
-            yield self._fetch(request)
-
-    def _fetch(self, request):
+    def get_one(self, request):
         try:
-            log.info("Fetch %s", request)
-            res = urlopen(request, timeout=self.timeout)
+            log.info("Fetch %s %s %s", type(request), request, request.url)
+            res = urlopen(request.url, timeout=self.timeout)
             return UrllibHttpResponse(request, res)
         except Exception as e:
             log.exception('Exception on %s', request)
@@ -48,20 +41,20 @@ class UrllibDownloader(BaseDownloader):
             )
 
 
-class ThreadedDownloader(UrllibDownloader):
-    """Threaded downloader by `ThreadPool` from `multiprocessing.pool`
-    package.
+class UrllibDownloader(BaseDownloader):
+    """Simplest downloader
 
-    :param pool_size: count of workers in pool
     :param timeout: request timeout in seconds
     """
+    WORKER_CLASS = UrllibDownloadWorker
 
-    def __init__(self, pool_size=5, timeout=5, middlewares=None):
-        self.workers_pool = ThreadPool(processes=pool_size)
-        super(ThreadedDownloader, self).__init__(middlewares=middlewares)
+    def __init__(self, middlewares=None, timeout=5):
+        super(UrllibDownloader, self).__init__(middlewares=middlewares)
+        self.worker = UrllibDownloadWorker(timeout=timeout)
 
     def get(self, requests):
-        return self.workers_pool.map(self._fetch, requests)
+        for request in iterator(requests):
+            yield self.worker.get_one(request)
 
 
 class UrllibHttpRequest(Request, BaseHttpRequest):
@@ -72,7 +65,7 @@ class UrllibHttpRequest(Request, BaseHttpRequest):
         return self.get_full_url()
 
     def __str__(self):
-        return '<UrllibRequest {s.url}>'.format(s=self)
+        return '<UrllibHttpRequest {s.url}>'.format(s=self)
 
 
 class UrllibHttpResponse(BaseHttpResponse):
@@ -81,21 +74,21 @@ class UrllibHttpResponse(BaseHttpResponse):
 
     def __init__(self, request, response):
         self.req = request
-        self.resp = response
+        # self.resp = response
 
         if not isinstance(response, Exception):
-            self.body = self.resp.read()
+            self.body = response.read()
 
     @property
     def request(self):
         return self.req
 
-    @property
-    def response(self):
-        return self.resp
+    # @property
+    # def response(self):
+    #     return self.resp
 
     def __str__(self):
-        return '<UrllibResponse on {s.request}>'.format(s=self)
+        return '<UrllibHttpResponse on {s.request}>'.format(s=self)
 
 
 class UrllibAdapterMiddleware(BaseDownloaderMiddleware):

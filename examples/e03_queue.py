@@ -13,9 +13,9 @@ except ImportError:
     import queue
 
 from pomp.core.base import BaseQueue, BaseCrawler
-from pomp.core.engine import Pomp
+from pomp.core.engine import Pomp, StopCommand
 from pomp.core.item import Item, Field
-from pomp.contrib.urllibtools import UrllibDownloader as dnl
+from pomp.contrib.urllibtools import UrllibDownloader, UrllibHttpRequest
 
 
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
@@ -46,7 +46,7 @@ class WrappedQueue(BaseQueue):
                 res = self.source_queue.get(block=False)
             except queue.Empty:
                 if self.stop_event.is_set():
-                    return None
+                    return StopCommand()
                 time.sleep(0.5)
             else:
                 log.debug('Queue GET <%s> on worker: %s', res, self.pid)
@@ -69,7 +69,7 @@ def crawler_worker(crawler_class, source_queue, stop_event):
     pid = os.getpid()
     log.debug('Start crawler worker: %s', pid)
     pomp = Pomp(
-        downloader=dnl(timeout=3),
+        downloader=UrllibDownloader(timeout=3),
         pipelines=[],
         queue=WrappedQueue(source_queue, stop_event),
     )
@@ -86,7 +86,7 @@ def populate_worker(source_queue, stop_event):
     for url in ['http://ya.ru/', 'http://google.com/', ]:
         log.debug('wait')
         time.sleep(3)
-        que.put_requests(url)
+        que.put_requests(UrllibHttpRequest(url))
 
     # stop crawler workers
     stop_event.set()

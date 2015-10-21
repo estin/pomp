@@ -7,14 +7,15 @@ Base classes
 """
 import sys
 import logging
-import defer
 
-
-CRAWL_DEPTH_FIRST_METHOD = 'depth'
-CRAWL_WIDTH_FIRST_METHOD = 'width'
+from pomp.core.utils import Planned
 
 
 log = logging.getLogger('pomp.contrib.core')
+
+
+class BaseCommand(object):
+    pass
 
 
 class BaseCrawler(object):
@@ -36,11 +37,6 @@ class BaseCrawler(object):
     ``ENTRY_REQUESTS`` may be list of urls or list of requests
     (instances of :class:`BaseHttpRequest`).
 
-    Crawler may choose which method for crawling to use by setting class
-    attribute ``CRAWL_METHOD`` with values:
-
-    - ``depth first`` is pomp.core.base.CRAWL_DEPTH_FIRST_METHOD (default)
-    - ``width first`` is pomp.core.base.CRAWL_WIDTH_FIRST_METHOD
 
     :note:
         If engine used queue for requests processing
@@ -48,7 +44,6 @@ class BaseCrawler(object):
         not required
     """
     ENTRY_REQUESTS = None
-    CRAWL_METHOD = CRAWL_DEPTH_FIRST_METHOD
 
     def __init__(self):
         self._in_process = 0
@@ -57,6 +52,10 @@ class BaseCrawler(object):
         """Getting next requests for processing.
 
         Called after `extract_items` method.
+
+        :note:
+            Subclass can not implement thid method.
+            Next requests may be returened with items in `extrat_items` method.
 
         :param response: the instance of :class:`BaseHttpResponse`
         :rtype: ``None`` or request or requests (instnace of
@@ -78,23 +77,9 @@ class BaseCrawler(object):
         """
         raise NotImplementedError()
 
-    def is_depth_first(self):
-        return self.CRAWL_METHOD == CRAWL_DEPTH_FIRST_METHOD
-
-    def dive(self, value=1):
-        # this method called in one thread - MainThread
-        # dowloader fetch request sync or async
-        self._in_process += value
-
-    def _reset_state(self):
-        self._in_process = 0
-
-    def in_process(self):
-        return self._in_process != 0
-
 
 class BaseQueue(object):
-    """Queue interface
+    """Blocking queue interface
 
     request is the task
     """
@@ -102,7 +87,7 @@ class BaseQueue(object):
     def get_requests(self):
         """Get from queue
 
-        :rtype: instance of :class:`BaseRequest` or `defer.Deferred`
+        :rtype: instance of :class:`BaseRequest` or `Planned`
                 or list of them
         """
         raise NotImplementedError()
@@ -111,6 +96,19 @@ class BaseQueue(object):
         """Put to queue
 
         :param requests: instance of :class:`BaseRequest` or list of them
+        """
+        raise NotImplementedError()
+
+
+class BaseDownloadWorker(object):
+    """Download worker interface"""
+
+    def get_one(self, request):
+        """Execute request
+
+        :param request: instance of :class:`BaseHttpRequest`
+        :rtype: instance of :class:`BaseHttpResponse` or
+                :class:`BaseDownloadException` or Planned for async behavior
         """
         raise NotImplementedError()
 
@@ -137,7 +135,7 @@ class BaseDownloader(object):
         self.response_middlewares = self.middlewares[:]
         self.response_middlewares.reverse()
 
-    def process(self, to_process, callback, crawler):
+    def process(self, to_process, crawler):
         if not to_process:
             return
 
@@ -150,14 +148,14 @@ class BaseDownloader(object):
                 except Exception as e:
                     log.exception(
                         'Exception on process %s by %s', request, middleware)
-                    request = None  # stop processing request by middlewares
-                    self._process_exception(
+                    yield self._process_exception(
                         BaseDownloadException(
                             request,
                             exception=e,
                             exc_info=sys.exc_info(),
                         )
                     )
+                    request = None  # stop processing request by middlewares
                 if not request:
                     break
 
@@ -169,52 +167,57 @@ class BaseDownloader(object):
         if not requests:
             return
 
-        def _process_resp(response):
-            is_error = isinstance(response, BaseDownloadException)
-            func = 'process_response' if not is_error else 'process_exception'
-            for middleware in self.response_middlewares:
-                try:
-                    response = getattr(middleware, func)(response)
-                except Exception as e:
-                    log.exception(
-                        'Exception on process %s by %s', response, middleware)
-                    response = None  # stop processing response by middlewares
-                    self._process_exception(
-                        BaseDownloadException(
-                            response,
-                            exception=e,
-                            exc_info=sys.exc_info(),
-                        )
-                    )
-                if not response:
-                    break
-
-            if response and not is_error:
-                try:
-                    return callback(crawler, response)
-                except Exception as e:
-                    log.exception(
-                        'Exception on response %s callback', response)
-                    self._process_exception(
-                        BaseDownloadException(
-                            response,
-                            exception=e,
-                            exc_info=sys.exc_info(),
-                        )
-                    )
-
-        crawler.dive(len(requests))  # dive in
         for response in self.get(requests):
-            if isinstance(response, defer.Deferred):  # async behavior
-                def _(res):
-                    crawler.dive(-1)  # dive out
-                    return res
-                response.add_callback(_)
-                response.add_callback(_process_resp)
-                yield response
+            if isinstance(response, Planned):  # async behavior
+                future = Planned()
+
+                def _chain(res):
+                    from datetime import datetime
+                    log.debug(
+                        '%s BaseDownloader done: %s -> %s',
+                        datetime.now(),
+                        response, future,
+                    )
+                    future.set_result(self._process_resp(res.result()))
+
+                response.add_done_callback(_chain)
+                log.debug(
+                    'BaseDownloader yield: %s wait: %s', future, response
+                )
+                yield future
             else:  # sync behavior
-                crawler.dive(-1)  # dive out
-                yield _process_resp(response)
+                yield self._process_resp(response)
+
+    def get(self, requests):
+        """Execute requests
+
+        :param requests: list of instances of :class:`BaseHttpRequest`
+        :rtype: list of instances of :class:`BaseHttpResponse` or
+                :class:`BaseDownloadException` or Planned for async behavior
+        """
+        raise NotImplementedError()
+
+    def _process_resp(self, response):
+        is_error = isinstance(response, BaseDownloadException)
+        func = 'process_response' if not is_error else 'process_exception'
+        for middleware in self.response_middlewares:
+            try:
+                value = getattr(middleware, func)(response)
+            except Exception as e:
+                log.exception(
+                    'Exception on process %s by %s', response, middleware)
+                response = self._process_exception(
+                    BaseDownloadException(
+                        response,
+                        exception=e,
+                        exc_info=sys.exc_info(),
+                    )
+                )
+                value = None  # stop processing response by middlewares
+            if not value:
+                break
+            response = value
+        return response
 
     def _process_exception(self, exception):
         for middleware in self.response_middlewares:
@@ -225,15 +228,7 @@ class BaseDownloader(object):
                     'Exception on prcess %s by %s', exception, middleware)
             if not value:  # stop processing exception
                 break
-
-    def get(self, requests):
-        """Execute requests
-
-        :param requests: urls or instances of :class:`BaseHttpRequest`
-        :rtype: instances of :class:`BaseHttpResponse` or
-                :class:`BaseDownloadException` or deferred for async behavior
-        """
-        raise NotImplementedError()
+        return value
 
 
 class BasePipeline(object):
@@ -347,7 +342,7 @@ class BaseDownloadException(Exception):
     :param exc_info: result of `sys.exc_info` call
     """
 
-    def __init__(self, request, exception, exc_info=None):
+    def __init__(self, request, exception=None, exc_info=None):
         self.request = request
         self.exception = exception
         self.exc_info = exc_info

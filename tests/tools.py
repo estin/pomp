@@ -2,7 +2,6 @@ import json
 from pomp.core.base import BaseCrawler, BaseDownloaderMiddleware, BasePipeline
 from pomp.core.base import BaseHttpRequest, BaseHttpResponse
 from pomp.core.base import BaseDownloader
-from pomp.core.base import CRAWL_WIDTH_FIRST_METHOD
 from pomp.core.item import Item, Field
 
 
@@ -16,12 +15,12 @@ class DummyItem(Item):
 
 class DummyCrawler(BaseCrawler):
     ENTRY_REQUESTS = None
-    CRAWL_METHOD = CRAWL_WIDTH_FIRST_METHOD
 
     def __init__(self):
         super(DummyCrawler, self).__init__()
 
     def next_requests(self, response):
+        print("NEXT REQUESTS on", response, response.body, type(response.body))
         res = response.body.get('links', [])
         return res
 
@@ -47,14 +46,19 @@ class RequestResponseMiddleware(BaseDownloaderMiddleware):
         self.prefix_url = prefix_url
         self.request_factory = request_factory
 
-    def process_request(self, url):
+    def process_request(self, request):
+        print("PROCESS REQUEST IS %s %s" % (type(request), request))
+        url = request.url if isinstance(request, BaseHttpRequest) else request
         url = '%s%s' % (self.prefix_url, url) \
             if self.prefix_url else url
         return self.request_factory(url)
 
     def process_response(self, response):
         if self.bodyjson:
-            response.body = json.loads(response.body.decode('utf-8'))
+            if isinstance(response.body, str):
+                response.body = json.loads(response.body)
+            else:
+                response.body = json.loads(response.body.decode('utf-8'))
         return response
 
 

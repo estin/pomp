@@ -59,15 +59,19 @@ def sitemap_app(environ, start_response):
     else:
         response = sitemap_app.sitemap.get(requested_url)
     log.debug('Requested url: %s, response: %s', requested_url, response)
-    ret = [response.encode('utf-8')]
+    try:
+        ret = [json.dumps(response).encode('utf-8')]
+    except Exception:
+        log.exception("bla-bla")
+    log.debug('Requested url: %s, ret: %s', requested_url, ret)
     return ret
 
 
 def make_reponse_body(items, links):
-    return json.dumps({
+    return {
         'items': items,
         'links': links,
-    })
+    }
 
 
 def make_sitemap(level=3, links_on_page=3, sitemap=None, entry='/root'):

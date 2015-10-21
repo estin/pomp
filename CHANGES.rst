@@ -3,10 +3,21 @@ pomp changelog
 
 Here you can see the full list of changes between pomp releases.
 
-Version 0.1.3
+Version 0.2.0
 -------------
 
 Not released yet
+
+- bfo and dfo orders now configured via Pomp constructor
+- no recursion, internal queue is used
+- twsited is not a part of pomp
+- defer object replaced to Planned object (like Future object)
+
+
+Version 0.1.3
+-------------
+
+Will not be released
 
 - crawler `extract_items` method can yield next requests
 - process exception on `extract_items` and `next_requests` by downloader

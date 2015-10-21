@@ -1,7 +1,6 @@
 import logging
 from nose.tools import assert_equal
 from pomp.core.base import BaseCrawler, BasePipeline, BaseQueue
-from pomp.core.base import CRAWL_WIDTH_FIRST_METHOD
 from pomp.core.engine import Pomp
 
 
@@ -19,24 +18,6 @@ url_to_request_middl = RequestResponseMiddleware(
 )
 
 
-# class Crawler(DummyCrawler):
-#     ENTRY_REQUESTS = (
-#         "http://python.org/1",
-#         "http://python.org/2",
-#     )
-#
-#     def __init__(self):
-#         super(Crawler, self).__init__()
-#         self.crawled_urls = []
-#
-#     def next_requests(self, response):
-#         url = 'http://python.org/1/trash'
-#         result = url if url not in self.crawled_urls else None
-#         self.crawled_urls.append(result)
-#         return result
-
-
-# class CrawlerYieldRequests(Crawler):
 class Crawler(DummyCrawler):
     ENTRY_REQUESTS = (
         "http://python.org/1",
@@ -76,7 +57,7 @@ class RoadPipeline(BasePipeline):
 
 class TestSimplerCrawler(object):
 
-    def test_crawler_dive_methods(self, crawler_class=None):
+    def test_dive_methods(self, crawler_class=None):
         crawler_class = crawler_class or Crawler
         road = RoadPipeline()
 
@@ -85,6 +66,7 @@ class TestSimplerCrawler(object):
             pipelines=[
                 road,
             ],
+            breadth_first=False,
         )
 
         # Depth first method
@@ -100,17 +82,21 @@ class TestSimplerCrawler(object):
         # Width first method
         road.reset()
 
-        class DummyWidthCrawler(crawler_class):
-            CRAWL_METHOD = CRAWL_WIDTH_FIRST_METHOD
-
-        pomp.pump(DummyWidthCrawler())
+        pomp = Pomp(
+            downloader=DummyDownloader(middlewares=[url_to_request_middl]),
+            pipelines=[
+                road,
+            ],
+            breadth_first=True,
+        )
+        pomp.pump(crawler_class())
 
         log.debug("in road %s", [item.url for item in road.collection])
-        assert_equal(set([item.url for item in road.collection]), set([
+        assert_equal([item.url for item in road.collection], [
             'http://python.org/1',
             'http://python.org/2',
             'http://python.org/1/trash',
-        ]))
+        ])
 
     def test_pipeline(self):
 
@@ -181,10 +167,7 @@ class TestSimplerCrawler(object):
             queue=queue,
         )
 
-        class DummyWidthCrawler(Crawler):
-            CRAWL_METHOD = CRAWL_WIDTH_FIRST_METHOD
-
-        pomp.pump(DummyWidthCrawler())
+        pomp.pump(Crawler())
 
         assert_equal(set([item.url for item in road.collection]), set([
             'http://python.org/1',
@@ -195,6 +178,7 @@ class TestSimplerCrawler(object):
     def test_crawler_return_none(self):
 
         class CrawlerWithoutItems(BaseCrawler):
+            ENTRY_REQUESTS = 'http://localhost/'
 
             def extract_items(self, *args, **kwargs):
                 pass
@@ -206,6 +190,3 @@ class TestSimplerCrawler(object):
             downloader=DummyDownloader(middlewares=[url_to_request_middl]),
         )
         pomp.pump(CrawlerWithoutItems())
-
-    # def test_dive_methods_with_yielded_requests_from_extract_items(self):
-    #     self.test_crawler_dive_methods(crawler_class=CrawlerYieldRequests)

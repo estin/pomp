@@ -2,7 +2,7 @@ import logging
 from nose.tools import assert_set_equal, assert_equal
 from pomp.core.base import BaseCrawler, BaseDownloaderMiddleware
 from pomp.core.engine import Pomp
-from pomp.contrib.urllibtools import UrllibDownloader, ThreadedDownloader
+from pomp.contrib.urllibtools import UrllibDownloader
 from pomp.contrib.urllibtools import UrllibAdapterMiddleware
 
 from mockserver import HttpServer, make_sitemap
@@ -24,7 +24,7 @@ class TestContribUrllib(object):
     def teardownClass(cls):
         cls.httpd.stop()
 
-    def test_thread_pooled_downloader(self):
+    def test_urllib_downloader(self):
         req_resp_midlleware = RequestResponseMiddleware(
             prefix_url=self.httpd.location,
             request_factory=lambda x: x,
@@ -32,7 +32,7 @@ class TestContribUrllib(object):
 
         collect_middleware = CollectRequestResponseMiddleware()
 
-        downloader = ThreadedDownloader(
+        downloader = UrllibDownloader(
             middlewares=[UrllibAdapterMiddleware(), collect_middleware]
         )
 

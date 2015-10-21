@@ -6,7 +6,9 @@ import re
 import logging
 from pomp.core.base import BaseCrawler, BasePipeline
 from pomp.core.item import Item, Field
-from pomp.contrib.urllibtools import UrllibDownloader
+from pomp.contrib.urllibtools import (
+    UrllibDownloader, UrllibHttpRequest,
+)
 
 
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
@@ -26,7 +28,7 @@ class PythonNewsItem(Item):
 
 
 class PythonNewsCrawler(BaseCrawler):
-    ENTRY_REQUESTS = 'http://python.org/news/'
+    ENTRY_REQUESTS = UrllibHttpRequest('http://python.org/news/')
 
     def extract_items(self, response):
         for i in news_re.findall(response.body.decode('utf-8')):

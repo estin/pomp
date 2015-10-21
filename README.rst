@@ -7,22 +7,28 @@ Inspired by `Scrapy`_ but simpler implementation and without hard `Twisted`_ dep
 
 Features:
 
-* one file applications
-* networking by choice
+* pure python
+* one dependency only for python2.x - `concurrent.futures`_ (backport
+  package for python2.x)
+* one file applications allowed
+* without project layouts and others restrictions
+* meta framework like `Paste`_ (a framework for scrapping frameworks)
+* extendible networking, may be used any sync or async methods
+* without parsing libraries in the core, use you favorites
+* can be distributed, designed to use external queue
 
- - `urllib`_
- - `Twisted`_ by package only for py2.x
- - `concurrent.futures`_ standard for py3.2+ or by backport package
- - yours own method
+Do not care about:
 
-* content parsing by yours own method
+* redirects
+* proxies
+* caching
+* database integration
+* cookies
+* authentication
+* etc.
 
-
-Roadmap:
-
-* `gevent`_ support
-* `Tornado`_ support
-* `GAE`_ support
+If you want some proxies, redirects or others stuff implement it by our
+self or use great library - `requests`_ as Pomp downloader.
 
 `Pomp examples`_
 
@@ -38,25 +44,22 @@ Continuous integration status by drone.io:
     :target: https://landscape.io/github/estin/pomp/master
     :alt: Code Health
 
-.. image:: https://coveralls.io/repos/estin/pomp/badge.png
-    :target: https://coveralls.io/r/estin/pomp
-    :alt: Coverage
 
 PyPI status:
 
-.. image:: https://pypip.in/v/pomp/badge.png
-    :target: https://crate.io/packages/pomp/
+.. image:: https://img.shields.io/pypi/v/pomp.png
+    :target: https://pypi.python.org/pypi/pomp/
     :alt: Latest PyPI version
 
-.. image:: https://pypip.in/d/pomp/badge.png
-    :target: https://crate.io/packages/pomp/
+.. image:: https://img.shields.io/pypi/dm/pomp.png
+    :target: https://pypi.python.org/pypi/pomp/
     :alt: Number of PyPI downloads
 
-.. image:: https://pypip.in/wheel/pomp/badge.png
+.. image:: https://img.shields.io/pypi/wheel/pomp.png
     :target: https://pypi.python.org/pypi/pomp/
     :alt: Have wheel
 
-.. image:: https://pypip.in/license/pomp/badge.png
+.. image:: https://img.shields.io/pypi/l/pomp.png
     :target: https://pypi.python.org/pypi/pomp/
     :alt: License
 
@@ -68,13 +71,11 @@ Docs status:
 
 Pomp is written and maintained by Evgeniy Tatarkin and is licensed under BSD license.
 
-.. _urllib: http://docs.python.org/3.3/library/urllib.html
 .. _Scrapy: http://scrapy.org/
 .. _Twisted: http://twistedmatrix.com/
-.. _gevent: http://www.gevent.org/
-.. _Tornado: http://www.tornadoweb.org/
 .. _concurrent.futures: http://pythonhosted.org/futures/
-.. _GAE: https://developers.google.com/appengine/
 .. _Pomp examples:
    https://bitbucket.org/estin/pomp/src/tip/examples?at=default
 .. _Pomp docs: http://pomp.readthedocs.org
+.. _Paste: http://pythonpaste.org/
+.. _requests: http://www.python-requests.org/en/latest/

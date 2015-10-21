@@ -15,15 +15,6 @@ Urllib
     :members:
 
 
-Twisted
-```````
-
-.. automodule:: pomp.contrib.twistedtools
-    :members:
-    :mockimport: twisted, zope
-    :mocktype: protocol.Protocol
-
-
 Concurrent future
 `````````````````
 
@@ -54,4 +45,11 @@ Interfaces
     :members:
 
 .. automodule:: pomp.core.item
+    :members:
+
+
+Utils
+*****
+
+.. automodule:: pomp.core.utils
     :members:

@@ -23,6 +23,7 @@ from pomp.core.base import BaseCrawler
 from pomp.contrib.pipelines import CsvPipeline
 from pomp.core.base import BasePipeline, BaseDownloaderMiddleware
 from pomp.core.item import Item, Field
+from pomp.contrib.urllibtools import UrllibHttpRequest
 
 
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
@@ -61,7 +62,8 @@ class LXMLDownloaderMiddleware(BaseDownloaderMiddleware):
     def process_response(self, response):
         if self.encoding:
             response.tree = html.fromstring(
-                response.body.decode(self.encoding))
+                response.body.decode(self.encoding)
+            )
         else:
             response.tree = html.fromstring(response.body)
         return response
@@ -81,16 +83,16 @@ class PrintPipeline(BasePipeline):
 
     def process(self, crawler, item):
         print('-' * 75)
-        print(item)
+        print(u'%s' % item)
         return item
 
 
 class DmozSpider(BaseCrawler):
     BASE_URL = 'http://www.dmoz.org/'
 
-    ENTRY_REQUESTS = urljoin(
+    ENTRY_REQUESTS = UrllibHttpRequest(urljoin(
         BASE_URL, '/Computers/Programming/Languages/Python/Books/'
-    )
+    ))
 
     DESCRIPTION_CLEANUP_RE = re.compile('-\s([^\n]*?)\\n')
 
@@ -120,17 +122,12 @@ class DmozSpider(BaseCrawler):
             url = urljoin(self.BASE_URL, link.get('href'))
             if url not in self._parsed_urls:
                 self._parsed_urls.append(url)
-                yield url
+                yield UrllibHttpRequest(url)
 
 
 if __name__ == '__main__':
     from pomp.core.engine import Pomp
-
-    try:
-        from pomp.contrib.concurrenttools import ConcurrentUrllibDownloader \
-            as dnl
-    except ImportError:
-        from pomp.contrib.urllibtools import ThreadedDownloader as dnl
+    from pomp.contrib.concurrenttools import ConcurrentUrllibDownloader
 
     statistics = StatisticMiddleware()
     middlewares = (
@@ -140,7 +137,10 @@ if __name__ == '__main__':
 
     filepath = os.path.join(tempfile.gettempdir(), 'dmoz.csv')
     pomp = Pomp(
-        downloader=dnl(middlewares=middlewares, timeout=10),
+        downloader=ConcurrentUrllibDownloader(
+            pool_size=3,
+            middlewares=middlewares,
+        ),
         pipelines=[
             PrintPipeline(),
             CsvPipeline(filepath, delimiter=';', quotechar='"'),
@@ -148,4 +148,4 @@ if __name__ == '__main__':
     )
 
     pomp.pump(DmozSpider())
-    print("Statistics:\n", statistics)
+    print("Statistics:\n %s" % statistics)

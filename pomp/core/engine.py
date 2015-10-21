@@ -1,15 +1,23 @@
 """
 Engine
 """
+import sys
 import types
-import itertools
 import logging
-
-import defer
+import itertools
 
 from pomp.core.item import Item
-from pomp.core.base import BaseHttpRequest
-from pomp.core.utils import iterator, isstring, DeferredList
+from pomp.core.base import (
+    BaseCommand, BaseQueue, BaseHttpRequest, BaseDownloadException,
+)
+from pomp.core.utils import (
+    iterator, isstring,  Planned,
+)
+
+try:
+    import Queue as queue
+except ImportError:
+    import queue
 
 
 log = logging.getLogger('pomp.engine')
@@ -20,6 +28,23 @@ def filter_requests(requests):
         lambda x: True if x else False,
         iterator(requests)
     )
+
+
+class StopCommand(BaseCommand):
+    pass
+
+
+class SimpleQueue(BaseQueue):
+
+    def __init__(self, use_lifo=False):
+        self.q = queue.Queue() if use_lifo else queue.LifoQueue()
+
+    def get_requests(self):
+        r = self.q.get()
+        return r
+
+    def put_requests(self, requests):
+        self.q.put(requests)
 
 
 class Pomp(object):
@@ -34,16 +59,33 @@ class Pomp(object):
     :param downloader: :class:`pomp.core.base.BaseDownloader`
     :param pipelines: list of item pipelines
                       :class:`pomp.core.base.BasePipeline`
-    :param queue: instance of :class:`pomp.core.base.BaseQueue`
+    :param queue: external queue, instance of :class:`pomp.core.base.BaseQueue`
+    :param breadth_first: use BFO order or DFO order, sensibly if used internal
+                          queue only
     """
 
-    def __init__(self, downloader, pipelines=None, queue=None):
+    def __init__(
+            self, downloader, pipelines=None, queue=None, breadth_first=False):
         self.downloader = downloader
         self.pipelines = pipelines or tuple()
-        self.queue = queue
+        self.queue = queue or SimpleQueue(use_lifo=not breadth_first)
 
     def response_callback(self, crawler, response):
-        log.info('Process %s', response)
+        try:
+            if not isinstance(response, BaseDownloadException):
+                return self.on_response(crawler, response)
+        except Exception as e:
+            log.exception("On response processing")
+            self.downloader._process_exception(
+                BaseDownloadException(
+                    response,
+                    exception=e,
+                    exc_info=sys.exc_info(),
+                )
+            )
+
+    def on_response(self, crawler, response):
+
         result = crawler.process(response)
 
         if isinstance(result, types.GeneratorType):
@@ -70,31 +112,7 @@ class Pomp(object):
         else:
             next_requests = crawler.next_requests(response)
 
-        if self.queue:
-            return next_requests  # return requests to pass through queue
-        else:  # execute requests by `width first` or `depth first` methods
-            if crawler.is_depth_first():
-                if next_requests:
-
-                    # next recursion step
-                    next_requests = self.downloader.process(
-                        iterator(next_requests),
-                        self.response_callback,
-                        crawler
-                    )
-
-                    self._sync_or_async(
-                        next_requests,
-                        crawler,
-                        self._on_next_requests
-                    )
-                else:
-                    if not self.stoped and not crawler.in_process():
-                        self._stop(crawler)
-
-                return None  # end of recursion
-            else:
-                return next_requests
+        return next_requests
 
     def _process_result(self, crawler, items):
         # requests may be yield with items
@@ -119,34 +137,33 @@ class Pomp(object):
                 ),
             ))
 
-        # if crawler without queue and with DEEP_FIRST strategy,
-        # then process next requests yielded from crawler.extract_items
-        if not self.queue and crawler.is_depth_first() and next_requests:
-            # next recursion step
-            next_requests = self.downloader.process(
-                next_requests,
-                self.response_callback,
-                crawler,
-            )
-
-            self._sync_or_async(
-                next_requests,
-                crawler,
-                self._on_next_requests,
-            )
-
         return next_requests
+
+    def process_requests(self, requests, crawler):
+        for response in self.downloader.process(requests, crawler):
+            if isinstance(response, Planned):
+                def _(r):
+                    self._put_requests(
+                        self.response_callback(crawler, r.result())
+                    )
+                    self._request_done()
+                response.add_done_callback(_)
+            else:
+                self._put_requests(
+                    self.response_callback(
+                        crawler, response
+                    )
+                )
+                self._request_done()
 
     def pump(self, crawler):
         """Start crawling
 
-        :param crawler: crawler to execute :class:`pomp.core.base.BaseCrawler`
+        :param crawler: isntance of :class:`pomp.core.base.BaseCrawler`
         """
         log.info('Prepare downloader: %s', self.downloader)
         self.downloader.prepare()
-
-        self.stoped = False
-        crawler._reset_state()
+        self.in_progress = 0
 
         log.info('Start crawler: %s', crawler)
 
@@ -154,106 +171,43 @@ class Pomp(object):
             log.info('Start pipe: %s', pipe)
             pipe.start(crawler)
 
-        self.stop_deferred = defer.Deferred()
+        self.stop_future = Planned()
 
+        # add ENTRY_REQUESTS to the queue
         next_requests = getattr(crawler, 'ENTRY_REQUESTS', None)
-
-        # process ENTRY_REQUESTS
         if next_requests:
-            next_requests = self.downloader.process(
-                iterator(crawler.ENTRY_REQUESTS),
-                self.response_callback,
-                crawler
+            self._put_requests(
+                iterator(next_requests)
             )
 
-        if self.queue:
-            if not next_requests:
-                # empty request - get it from queue
-                next_requests = self.downloader.process(
-                    iterator(self.queue.get_requests()),
-                    self.response_callback,
-                    crawler
-                )
-
-            self._sync_or_async(
-                next_requests,
-                crawler,
-                self._on_next_requests
-            )
-        else:  # recursive process
-            if not crawler.is_depth_first():
-                self._sync_or_async(
-                    next_requests,
-                    crawler,
-                    self._on_next_requests
-                )
-            else:
-                # is width first method
-                # execute generator
-                if isinstance(next_requests, types.GeneratorType):
-                    list(next_requests)  # fire generator
-        return self.stop_deferred
-
-    def _sync_or_async(self, next_requests, crawler, callback):
-        d = DeferredList([r for r in filter_requests(next_requests)])
-        d.add_callback(callback, crawler)
-        return d
-
-    def _do(self, requests, crawler):
-        # execute request by downloader
-        for req in filter_requests(requests):
-            _requests = self.downloader.process(
-                iterator(req),
-                self.response_callback,
-                crawler
-            )
-            self._sync_or_async(
-                _requests,
-                crawler,
-                self._on_next_requests
+        while True:
+            next_requests = self.queue.get_requests()
+            if isinstance(next_requests, StopCommand):
+                break
+            self.process_requests(
+                iterator(next_requests), crawler,
             )
 
-    def _on_next_requests(self, next_requests, crawler):
-        if self.queue:
-            # if queue then all request must pass through it
-            # first put request to queue for others crawler nodes
-            for requests in filter_requests(next_requests):
-                filtered = list(filter_requests(requests))  # fire
-                if filtered:
-                    self.queue.put_requests(filtered)
+        self._stop(crawler)
 
-            # others crawler nodes will get request from common queue
-            # pass
+        return self.stop_future
 
-            # now get from queue
-            try:
-                next_requests = self.queue.get_requests()
-            except Exception:
-                log.exception('On get requests from %s', self.queue)
-                raise
+    def _put_requests(self, requests):
+        if not requests:
+            return
+        for request in requests:
+            self.in_progress += 1
+            self.queue.put_requests(request)
 
-            reason = 'queue is empty'
-            if isinstance(next_requests, defer.Deferred):
-                next_requests.add_callback(self._check_stop, crawler, reason)
-            else:
-                self._check_stop(next_requests, crawler, reason)
-            self._sync_or_async(next_requests, crawler, self._do)
-        else:
-            # execute recursive
-            self._do(next_requests, crawler)
-            self._check_stop(None, crawler, 'recursion ended')
-
-    def _check_stop(self, request, crawler, reason):
-        if not self.stoped and not request and not crawler.in_process():
-            log.info('STOP by reason: %s', reason)
-            self._stop(crawler)
-        return request
+    def _request_done(self):
+        self.in_progress -= 1
+        if self.in_progress == 0:
+            self.queue.put_requests(StopCommand())
 
     def _stop(self, crawler):
-        self.stoped = True
         for pipe in self.pipelines:
             log.info('Stop pipe: %s', pipe)
             pipe.stop(crawler)
 
         log.info('Stop crawler: %s', crawler)
-        self.stop_deferred.callback(None)
+        self.stop_future.set_result(None)

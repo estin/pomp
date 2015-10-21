@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import sys
 from setuptools import setup, find_packages
 
 
@@ -21,7 +22,7 @@ setup(
     tests_require=['nose >= 1.0', ],
     test_suite='nose.collector',
     setup_requires=['versiontools >= 1.8', ],
-    install_requires=['defer', ],
+    install_requires=['futures', ] if sys.version_info < (3, 2) else [],
     classifiers=[
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',

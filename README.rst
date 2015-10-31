@@ -10,12 +10,11 @@ Features:
 * pure python
 * one dependency only for python2.x - `concurrent.futures`_ (backport
   package for python2.x)
-* one file applications allowed
-* without project layouts and others restrictions
+* one file applications, without project layouts and others restrictions
 * meta framework like `Paste`_ (a framework for scrapping frameworks)
 * extendible networking, may be used any sync or async methods
 * without parsing libraries in the core, use you favorites
-* can be distributed, designed to use external queue
+* can be distributed, designed to use an external queue
 
 Do not care about:
 

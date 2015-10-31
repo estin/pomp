@@ -1,2 +1,3 @@
  * downloader middlewares can return more than one request/response
  * Pomp.pump() must be fully integreated with asyncio - task/coroutine
+ * pickle traceback from downloader worker

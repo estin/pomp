@@ -36,12 +36,6 @@ class BaseCrawler(object):
 
     ``ENTRY_REQUESTS`` may be list of urls or list of requests
     (instances of :class:`BaseHttpRequest`).
-
-
-    :note:
-        If engine used queue for requests processing
-        the ```CRAWL_METHOD``` is ignored. And ```ENTRY_REQUESTS```
-        not required
     """
     ENTRY_REQUESTS = None
 
@@ -79,15 +73,16 @@ class BaseCrawler(object):
 
 
 class BaseQueue(object):
-    """Blocking queue interface
-
-    request is the task
-    """
+    """Blocking queue interface"""
 
     def get_requests(self):
         """Get from queue
 
-        :rtype: instance of :class:`BaseRequest` or `Planned`
+        .. note::
+
+            must block execution until item is available
+
+        :rtype: instance of :class:`BaseRequest` or :class:`.Planned`
                 or list of them
         """
         raise NotImplementedError()
@@ -108,7 +103,8 @@ class BaseDownloadWorker(object):
 
         :param request: instance of :class:`BaseHttpRequest`
         :rtype: instance of :class:`BaseHttpResponse` or
-                :class:`BaseDownloadException` or Planned for async behavior
+                :class:`BaseDownloadException` or :class:`.Planned`
+                for async behavior
         """
         raise NotImplementedError()
 
@@ -193,7 +189,8 @@ class BaseDownloader(object):
 
         :param requests: list of instances of :class:`BaseHttpRequest`
         :rtype: list of instances of :class:`BaseHttpResponse` or
-                :class:`BaseDownloadException` or Planned for async behavior
+                :class:`BaseDownloadException` or :class:`.Planned`
+                for async behavior
         """
         raise NotImplementedError()
 

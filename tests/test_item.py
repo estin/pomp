@@ -1,13 +1,15 @@
+import pickle
 from nose.tools import assert_equal
 from pomp.core.item import Item, Field
 
 
-def test_item():
+class TItem(Item):
+    f1 = Field()
+    f2 = Field()
+    f3 = Field()
 
-    class TItem(Item):
-        f1 = Field()
-        f2 = Field()
-        f3 = Field()
+
+def test_item():
 
     # item as a dict
     i = TItem()
@@ -29,3 +31,6 @@ def test_item():
     assert_equal(i.f1, 'f1_new')
     assert_equal(i.f2, 'f2_new')
     assert_equal(i.f3, 'f3')
+
+    # pickling
+    assert_equal(i, pickle.loads(pickle.dumps(i)))

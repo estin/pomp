@@ -39,6 +39,10 @@ class Item(OrderedDict):
 
         return value
 
+    # determine pickling
+    def __reduce__(self):
+        return (self.__class__, tuple(self.values()), )
+
 
 class Field(object):
     counter = 0

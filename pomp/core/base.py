@@ -194,6 +194,12 @@ class BaseDownloader(object):
         """
         raise NotImplementedError()
 
+    def get_workers_count(self):
+        """
+        :rtype: count of workers (pool size), by default 0
+        """
+        return 0
+
     def _process_resp(self, response):
         is_error = isinstance(response, BaseDownloadException)
         func = 'process_response' if not is_error else 'process_exception'

@@ -9,4 +9,4 @@ fi
 # drone.io run script
 pip install tox codecov
 tox -e py27,py35,docs,py27examples,py35examples,qa
-codecov --token=$CODECOVE_REPO_TOKEN
+codecov --token=$CODECOV_REPO_TOKEN

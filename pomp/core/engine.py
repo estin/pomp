@@ -5,6 +5,7 @@ import sys
 import types
 import logging
 import itertools
+import threading
 
 from pomp.core.item import Item
 from pomp.core.base import (
@@ -180,7 +181,19 @@ class Pomp(object):
                 iterator(next_requests)
             )
 
+        # configure queue semaphore
+        workers_count = self.downloader.get_workers_count()
+        if workers_count > 1:
+            self.queue_semaphore = threading.BoundedSemaphore(workers_count)
+        else:
+            self.queue_semaphore = None
+
         while True:
+
+            # do not fetch from queue request more than downloader can process
+            if self.queue_semaphore:
+                self.queue_semaphore.acquire(blocking=True)
+
             next_requests = self.queue.get_requests()
             if isinstance(next_requests, StopCommand):
                 break
@@ -188,7 +201,12 @@ class Pomp(object):
                 iterator(next_requests), crawler,
             )
 
-        self._stop(crawler)
+        for pipe in self.pipelines:
+            log.info('Stop pipe: %s', pipe)
+            pipe.stop(crawler)
+
+        log.info('Stop crawler: %s', crawler)
+        self.stop_future.set_result(None)
 
         return self.stop_future
 
@@ -200,14 +218,10 @@ class Pomp(object):
             self.queue.put_requests(request)
 
     def _request_done(self):
+        if self.queue_semaphore:
+            self.queue_semaphore.release()
+
         self.in_progress -= 1
         if self.in_progress == 0:
+            # work done
             self.queue.put_requests(StopCommand())
-
-    def _stop(self, crawler):
-        for pipe in self.pipelines:
-            log.info('Stop pipe: %s', pipe)
-            pipe.stop(crawler)
-
-        log.info('Stop crawler: %s', crawler)
-        self.stop_future.set_result(None)

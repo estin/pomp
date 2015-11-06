@@ -39,7 +39,8 @@ class ConcurrentDownloader(BaseDownloader):
             worker_kwargs=None, pool_size=5, middlewares=None,):
 
         # configure executor
-        self.executor = ProcessPoolExecutor(max_workers=pool_size)
+        self.pool_size = pool_size
+        self.executor = ProcessPoolExecutor(max_workers=self.pool_size)
 
         # prepare worker params
         self.worker_params = {
@@ -81,6 +82,9 @@ class ConcurrentDownloader(BaseDownloader):
             )
 
             yield done_future
+
+    def get_workers_count(self):
+        return self.pool_size
 
 
 class ConcurrentUrllibDownloader(ConcurrentDownloader):

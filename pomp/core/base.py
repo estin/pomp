@@ -168,18 +168,9 @@ class BaseDownloader(object):
                 future = Planned()
 
                 def _chain(res):
-                    from datetime import datetime
-                    log.debug(
-                        '%s BaseDownloader done: %s -> %s',
-                        datetime.now(),
-                        response, future,
-                    )
                     future.set_result(self._process_resp(res.result()))
 
                 response.add_done_callback(_chain)
-                log.debug(
-                    'BaseDownloader yield: %s wait: %s', future, response
-                )
                 yield future
             else:  # sync behavior
                 yield self._process_resp(response)

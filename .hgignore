@@ -11,3 +11,4 @@ build/
 *.csv
 .coverage
 .coveralls.yml
+ctags

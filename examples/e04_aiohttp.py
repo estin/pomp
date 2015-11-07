@@ -1,5 +1,5 @@
 """
-EXPERIMENTAL asyncio support.
+asyncio support
 For python >= 3.4, requires: aiohttp, lxml
 
 e02_dmoz.py on aiohttp downloader
@@ -17,7 +17,7 @@ except ImportError:
 import aiohttp
 
 from pomp.core.base import (
-    BaseQueue, BaseHttpRequest, BaseHttpResponse, BaseDownloader,
+    BaseHttpRequest, BaseHttpResponse, BaseDownloader,
 )
 from pomp.core.utils import Planned
 
@@ -42,6 +42,14 @@ class AiohttpResponse(BaseHttpResponse):
     def __init__(self, request, body):
         self.req = request
         self.body = body
+
+    @property
+    def request(self):
+        return self.req
+
+    @property
+    def response(self):
+        raise self.body
 
 
 class AiohttpDownloader(BaseDownloader):
@@ -72,23 +80,8 @@ class AiohttpDownloader(BaseDownloader):
             yield planned
 
 
-class AiohttpQueue(BaseQueue):
-    def __init__(self, loop):
-        self.q = asyncio.Queue()
-        self.loop = loop
-
-    def get_requests(self):
-        future = ensure_future(self.q.get())
-        # block pomp loop and run asyncio loop
-        self.loop.run_until_complete(future)
-        return future.result()
-
-    def put_requests(self, requests):
-        ensure_future(self.q.put(requests))
-
-
 if __name__ == '__main__':
-    from pomp.core.engine import Pomp
+    from pomp.contrib.asynciotools import AioPomp
     from e02_dmoz import (
         PrintPipeline, DmozSpider, LXMLDownloaderMiddleware,
         StatisticMiddleware,
@@ -96,7 +89,7 @@ if __name__ == '__main__':
 
     loop = asyncio.get_event_loop()
     statistics = StatisticMiddleware()
-    pomp = Pomp(
+    pomp = AioPomp(
         downloader=AiohttpDownloader(
             middlewares=(
                 statistics,
@@ -104,7 +97,7 @@ if __name__ == '__main__':
             ),
         ),
         pipelines=[PrintPipeline()],
-        queue=AiohttpQueue(loop=loop),
     )
-    pomp.pump(DmozSpider())
+    loop.run_until_complete(pomp.pump(DmozSpider()))
+    loop.close()
     print("Statistics:\n %s" % statistics)

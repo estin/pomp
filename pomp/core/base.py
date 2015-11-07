@@ -343,3 +343,9 @@ class BaseDownloadException(Exception):
 
     def __str__(self):
         return 'Exception on %s - %s' % (self.request, self.exception)
+
+
+class BaseEngine(object):
+
+    def pump(self, crawler):
+        raise NotImplementedError()

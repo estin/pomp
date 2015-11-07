@@ -9,7 +9,7 @@ import threading
 
 from pomp.core.item import Item
 from pomp.core.base import (
-    BaseCommand, BaseQueue, BaseHttpRequest, BaseDownloadException,
+    BaseEngine, BaseCommand, BaseQueue, BaseHttpRequest, BaseDownloadException,
 )
 from pomp.core.utils import (
     iterator, isstring,  Planned,
@@ -48,7 +48,7 @@ class SimpleQueue(BaseQueue):
         self.q.put(requests)
 
 
-class Pomp(object):
+class Pomp(BaseEngine):
     """Configuration object
 
     Main goal of class is to glue together all parts of application:
@@ -64,12 +64,15 @@ class Pomp(object):
     :param breadth_first: use BFO order or DFO order, sensibly if used internal
                           queue only
     """
+    DEFAULT_QUEUE_CLASS = SimpleQueue
 
     def __init__(
             self, downloader, pipelines=None, queue=None, breadth_first=False):
         self.downloader = downloader
         self.pipelines = pipelines or tuple()
-        self.queue = queue or SimpleQueue(use_lifo=not breadth_first)
+        self.queue = queue or self.DEFAULT_QUEUE_CLASS(
+            use_lifo=not breadth_first
+        )
 
     def response_callback(self, crawler, response):
         try:
@@ -157,11 +160,7 @@ class Pomp(object):
                 )
                 self._request_done()
 
-    def pump(self, crawler):
-        """Start crawling
-
-        :param crawler: isntance of :class:`pomp.core.base.BaseCrawler`
-        """
+    def prepare(self, crawler):
         log.info('Prepare downloader: %s', self.downloader)
         self.downloader.prepare()
         self.in_progress = 0
@@ -172,8 +171,6 @@ class Pomp(object):
             log.info('Start pipe: %s', pipe)
             pipe.start(crawler)
 
-        self.stop_future = Planned()
-
         # add ENTRY_REQUESTS to the queue
         next_requests = getattr(crawler, 'ENTRY_REQUESTS', None)
         if next_requests:
@@ -182,11 +179,20 @@ class Pomp(object):
             )
 
         # configure queue semaphore
-        workers_count = self.downloader.get_workers_count()
-        if workers_count > 1:
-            self.queue_semaphore = threading.BoundedSemaphore(workers_count)
-        else:
-            self.queue_semaphore = None
+        self.queue_semaphore = self.get_queue_semaphore()
+
+    def finish(self, crawler):
+        for pipe in self.pipelines:
+            log.info('Stop pipe: %s', pipe)
+            pipe.stop(crawler)
+        log.info('Stop crawler: %s', crawler)
+
+    def pump(self, crawler):
+        """Start crawling
+
+        :param crawler: isntance of :class:`pomp.core.base.BaseCrawler`
+        """
+        self.prepare(crawler)
 
         while True:
 
@@ -201,14 +207,7 @@ class Pomp(object):
                 iterator(next_requests), crawler,
             )
 
-        for pipe in self.pipelines:
-            log.info('Stop pipe: %s', pipe)
-            pipe.stop(crawler)
-
-        log.info('Stop crawler: %s', crawler)
-        self.stop_future.set_result(None)
-
-        return self.stop_future
+        self.finish(crawler)
 
     def _put_requests(self, requests):
         if not requests:
@@ -225,3 +224,8 @@ class Pomp(object):
         if self.in_progress == 0:
             # work done
             self.queue.put_requests(StopCommand())
+
+    def get_queue_semaphore(self):
+        workers_count = self.downloader.get_workers_count()
+        if workers_count > 1:
+            return threading.BoundedSemaphore(workers_count)

@@ -47,7 +47,6 @@ class RequestResponseMiddleware(BaseDownloaderMiddleware):
         self.request_factory = request_factory
 
     def process_request(self, request):
-        print("PROCESS REQUEST IS %s %s" % (type(request), request))
         url = request.url if isinstance(request, BaseHttpRequest) else request
         url = '%s%s' % (self.prefix_url, url) \
             if self.prefix_url else url

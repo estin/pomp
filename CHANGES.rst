@@ -8,6 +8,7 @@ Version 0.2.0
 
 Not released yet
 
+- AioPomp with asyncio support
 - queue semaphore to prevent fetching more requests than downloader can
   process now
 - bfo and dfo orders now configured via Pomp constructor

@@ -39,9 +39,9 @@ Continuous integration status by drone.io:
     :target: https://drone.io/bitbucket.org/estin/pomp/latest
     :alt: Latest CI test
 
-.. image:: https://landscape.io/github/estin/pomp/master/landscape.svg?style=flat
-    :target: https://landscape.io/github/estin/pomp/master
-    :alt: Code Health
+.. image:: https://codecov.io/bitbucket/estin/pomp/coverage.png?branch=default
+    :target: https://codecov.io/bitbucket/estin/pomp?branch=default
+    :alt: codecov
 
 
 PyPI status:

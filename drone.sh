@@ -9,7 +9,6 @@ fi
 pip install coverage tox
 tox -e py27,py35,docs,py27examples,py35examples,qa
 coverage combine
-coverage report --include="pomp/*"
 
 if [ ! -z "$CODECOV_REPO_TOKEN" ]; then
     pip install codecov

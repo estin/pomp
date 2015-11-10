@@ -89,7 +89,7 @@ class Planned(object):
         for callback in self._done_callbacks:
             try:
                 callback(self)
-            except Exception:  # pargma: no cover
+            except Exception:  # pragma: no cover
                 log.exception('exception calling callback for %r', self)
 
     def __repr__(self):  # pragma: no cover

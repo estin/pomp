@@ -5,4 +5,5 @@ concurrency=multiprocessing
 [report]
 omit=
     .tox/*
+    tests/*
     /usr/local/lib/*

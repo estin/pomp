@@ -14,11 +14,11 @@ from pomp.core.utils import Planned
 log = logging.getLogger('pomp.contrib.core')
 
 
-class BaseCommand(object):
+class BaseCommand(object):  # pragma: no cover
     pass
 
 
-class BaseCrawler(object):
+class BaseCrawler(object):  # pragma: no cover
     """Crawler interface
 
     Crawler must resolve two main tasks:
@@ -42,7 +42,7 @@ class BaseCrawler(object):
     def __init__(self):
         self._in_process = 0
 
-    def next_requests(self, response):
+    def next_requests(self, response):  # pragma: no cover
         """Getting next requests for processing.
 
         Called after `extract_items` method.
@@ -72,7 +72,7 @@ class BaseCrawler(object):
         raise NotImplementedError()
 
 
-class BaseQueue(object):
+class BaseQueue(object):  # pragma: no cover
     """Blocking queue interface"""
 
     def get_requests(self):
@@ -95,7 +95,7 @@ class BaseQueue(object):
         raise NotImplementedError()
 
 
-class BaseDownloadWorker(object):
+class BaseDownloadWorker(object):  # pragma: no cover
     """Download worker interface"""
 
     def get_one(self, request):
@@ -132,7 +132,7 @@ class BaseDownloader(object):
         self.response_middlewares.reverse()
 
     def process(self, to_process, crawler):
-        if not to_process:
+        if not to_process:  # pragma: no cover
             return
 
         requests = []
@@ -175,7 +175,7 @@ class BaseDownloader(object):
             else:  # sync behavior
                 yield self._process_resp(response)
 
-    def get(self, requests):
+    def get(self, requests):  # pragma: no cover
         """Execute requests
 
         :param requests: list of instances of :class:`BaseHttpRequest`
@@ -220,12 +220,12 @@ class BaseDownloader(object):
             except Exception:
                 log.exception(
                     'Exception on prcess %s by %s', exception, middleware)
-            if not value:  # stop processing exception
+            if not value:  # stop processing exception  # pragma: no cover
                 break
         return value
 
 
-class BasePipeline(object):
+class BasePipeline(object):  # pragma: no cover
     """Pipeline interface
 
     The main goals of pipe is:
@@ -295,17 +295,17 @@ class BaseDownloaderMiddleware(object):
         return exception
 
 
-class BaseRequest(object):
+class BaseRequest(object):  # pragma: no cover
     """Request interface"""
     pass
 
 
-class BaseResponse(object):
+class BaseResponse(object):  # pragma: no cover
     """Response interface"""
     pass
 
 
-class BaseHttpRequest(BaseRequest):
+class BaseHttpRequest(BaseRequest):  # pragma: no cover
     """HTTP request interface"""
 
     @property
@@ -314,7 +314,7 @@ class BaseHttpRequest(BaseRequest):
         raise NotImplementedError()
 
 
-class BaseHttpResponse(BaseResponse):
+class BaseHttpResponse(BaseResponse):  # pragma: no cover
     """HTTP response interface"""
 
     @property
@@ -328,7 +328,7 @@ class BaseHttpResponse(BaseResponse):
         raise NotImplementedError()
 
 
-class BaseDownloadException(Exception):
+class BaseDownloadException(Exception):  # pragma: no cover
     """Download exception interface
 
     :param request: request raises this exception
@@ -345,7 +345,7 @@ class BaseDownloadException(Exception):
         return 'Exception on %s - %s' % (self.request, self.exception)
 
 
-class BaseEngine(object):
+class BaseEngine(object):  # pragma: no cover
 
     def pump(self, crawler):
         raise NotImplementedError()

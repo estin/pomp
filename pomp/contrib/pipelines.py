@@ -41,7 +41,7 @@ class UnicodeCsvWriter:
         # empty queue
         self.queue.truncate(0)
 
-    def writerows(self, rows):
+    def writerows(self, rows):  # pragma: no cover
         for row in rows:
             self.writerow(row)
 
@@ -66,7 +66,7 @@ class CsvPipeline(BasePipeline):
         self._csv_args = args
         self._csv_kwargs = kwargs
 
-        # no close file if it not opened by this instance
+        # do not close file if it not opened by this instance
         self._need_close = False
 
     def start(self, crawler):

@@ -89,10 +89,10 @@ class Planned(object):
         for callback in self._done_callbacks:
             try:
                 callback(self)
-            except Exception:
+            except Exception:  # pargma: no cover
                 log.exception('exception calling callback for %r', self)
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         if self._state == FINISHED:
             if self._exception:
                 return '<Planned at %s state=%s raised %s>' % (

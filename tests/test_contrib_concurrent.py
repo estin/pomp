@@ -14,18 +14,20 @@ from nose.tools import assert_set_equal
 from pomp.core.base import BaseDownloadWorker
 from pomp.core.engine import Pomp
 from pomp.contrib.urllibtools import (
-    UrllibHttpRequest, UrllibHttpResponse,
+    UrllibHttpRequest, UrllibHttpResponse, UrllibAdapterMiddleware,
 )
 from pomp.core.utils import PY3
 
 try:
-    from pomp.contrib.concurrenttools import ConcurrentDownloader
+    from pomp.contrib.concurrenttools import (
+        ConcurrentDownloader, ConcurrentUrllibDownloader,
+    )
 except ImportError:
     raise SkipTest('concurrent future not available')
 
 from tools import DummyCrawler
 from tools import RequestResponseMiddleware, CollectRequestResponseMiddleware
-from mockserver import make_sitemap
+from mockserver import HttpServer, make_sitemap
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -74,18 +76,52 @@ class TestContribConcurrent(object):
         class Crawler(DummyCrawler):
             ENTRY_REQUESTS = '/root'
 
-        log.debug("Before pump")
         pomp.pump(Crawler())
-        log.debug("After pump")
-
-        print(
-            set([r.url.replace('http://localhost', '')
-                for r in collect_middleware.requests]),
-            set(MockedDownloadWorker.sitemap.keys())
-        )
 
         assert_set_equal(
             set([r.url.replace('http://localhost', '')
                 for r in collect_middleware.requests]),
             set(MockedDownloadWorker.sitemap.keys())
+        )
+
+
+class TestContribConcurrentUrllib(object):
+
+    @classmethod
+    def setupClass(cls):
+        cls.httpd = HttpServer(sitemap=make_sitemap(level=2, links_on_page=2))
+        cls.httpd.start()
+
+    @classmethod
+    def teardownClass(cls):
+        cls.httpd.stop()
+
+    def test_concurrent_urllib_downloader(self):
+        req_resp_midlleware = RequestResponseMiddleware(
+            prefix_url=self.httpd.location,
+            request_factory=lambda x: x,
+        )
+
+        collect_middleware = CollectRequestResponseMiddleware()
+
+        downloader = ConcurrentUrllibDownloader(
+            middlewares=[UrllibAdapterMiddleware(), collect_middleware]
+        )
+
+        downloader.middlewares.insert(0, req_resp_midlleware)
+
+        pomp = Pomp(
+            downloader=downloader,
+            pipelines=[],
+        )
+
+        class Crawler(DummyCrawler):
+            ENTRY_REQUESTS = '/root'
+
+        pomp.pump(Crawler())
+
+        assert_set_equal(
+            set([r.url.replace(self.httpd.location, '')
+                for r in collect_middleware.requests]),
+            set(self.httpd.sitemap.keys())
         )

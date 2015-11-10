@@ -6,7 +6,12 @@ if ! type python3.5 > /dev/null; then
     sudo apt-get -qq install python3.5-dev > /dev/null 2>&1
 fi
 
-# drone.io run script
-pip install tox codecov
+pip install coverage tox
 tox -e py27,py35,docs,py27examples,py35examples,qa
-codecov --token=$CODECOV_REPO_TOKEN
+coverage combine
+coverage report --include="pomp/*"
+
+if [ ! -z "$CODECOV_REPO_TOKEN" ]; then
+    pip install codecov
+    codecov --token=$CODECOV_REPO_TOKEN
+fi

@@ -6,7 +6,7 @@ or `urllib2` for python2.7+
 import sys
 try:
     from urllib.request import urlopen, Request
-except ImportError:
+except ImportError:  # pragma: no cover
     from urllib2 import urlopen, Request
 
 import logging
@@ -97,7 +97,7 @@ class UrllibAdapterMiddleware(BaseDownloaderMiddleware):
     """
 
     def process_request(self, req):
-        if isinstance(req, BaseHttpRequest):
+        if isinstance(req, BaseHttpRequest):  # pragma: no cover
             return req
         return UrllibHttpRequest(req)
 

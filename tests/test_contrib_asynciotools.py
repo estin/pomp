@@ -77,6 +77,9 @@ class AiohttpDownloader(BaseDownloader):
         )
         future.set_result(AiohttpResponse(request, body))
 
+    def get_workers_count(self):
+        return 2
+
     def get(self, requests):
         for request in requests:
 

@@ -21,8 +21,7 @@ class TestContribPipelines(object):
 
     def test_csv_pipeline(self):
 
-        with codecs.open('test_pipe.csv', 'w', encoding='utf-8') as csvfile:
-
+        def _process(csvfile):
             pipe = CsvPipeline(
                 csvfile,
                 delimiter=';',
@@ -43,8 +42,19 @@ class TestContribPipelines(object):
             # close files
             pipe.stop(None)
 
+        # open file and init pipe
+        with codecs.open('test_pipe.csv', 'w', encoding='utf-8') as csvfile:
+
+            _process(csvfile)
+
             # check content
             csvfile.flush()
             with open(csvfile.name, 'r') as csvres:
                 res = csvres.read()
                 assert_equal(res.strip(), 'f1;f2;;f4')
+
+        # init pipe by filepath
+        _process('test_pipe2.csv')
+        with open('test_pipe2.csv', 'r') as csvres:
+            res = csvres.read()
+            assert_equal(res.strip(), 'f1;f2;;f4')

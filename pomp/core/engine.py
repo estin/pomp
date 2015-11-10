@@ -24,13 +24,6 @@ except ImportError:
 log = logging.getLogger('pomp.engine')
 
 
-def filter_requests(requests):
-    return filter(
-        lambda x: True if x else False,
-        iterator(requests)
-    )
-
-
 class StopCommand(BaseCommand):
     pass
 
@@ -111,7 +104,7 @@ class Pomp(BaseEngine):
                     requests_from_items,
                     iterator(_requests),
                 )
-            else:
+            else:  # pragma: no cover
                 next_requests = requests_from_items
         else:
             next_requests = crawler.next_requests(response)

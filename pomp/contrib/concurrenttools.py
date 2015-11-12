@@ -23,7 +23,7 @@ def _run_worker(params, request):
         return params['worker_class'](
             **params.get('worker_kwargs', {})
         ).get_one(request)
-    except Exception:  # pragma: no cover
+    except Exception:
         log.exception("Exception on worker pid=%s request=%s", pid, request)
         raise
 
@@ -55,7 +55,7 @@ class ConcurrentDownloader(BaseDownloader):
     def _done(self, request, done_future, future):
         try:
             response = future.result()
-        except Exception as e:  # pragma: no cover
+        except Exception as e:
             log.exception('Exception on %s', request)
             done_future.set_result(BaseDownloadException(
                 request,

@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import json
+import random
 import logging
 import multiprocessing
 from wsgiref.util import setup_testing_defaults
@@ -99,17 +100,18 @@ def make_sitemap(level=3, links_on_page=3, sitemap=None, entry='/root'):
 
 class HttpServer(object):
 
-    def __init__(self, host='localhost', port=8001, app=None, sitemap=None):
+    def __init__(self, host='localhost', port=None, app=None, sitemap=None):
         app = app or sitemap_app
         self.sitemap = sitemap or {}
 
         # inject sitemap to app
         app.sitemap = self.sitemap
 
-        self.host, self.port = host, port
+        self.host = host
+        self.port = port or (8000 + random.randint(0, 100))
         self.location = 'http://%s:%s' % (self.host, self.port)
 
-        self.httpd = make_server(host, port, app)
+        self.httpd = make_server(self.host, self.port, app)
         self.process = multiprocessing \
             .Process(target=self.httpd.serve_forever)
 

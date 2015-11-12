@@ -9,7 +9,7 @@ except Exception:
     from StringIO import StringIO
 
 from nose import SkipTest
-from nose.tools import assert_set_equal
+from nose.tools import assert_equal, assert_set_equal
 
 from pomp.core.base import BaseDownloadWorker
 from pomp.core.engine import Pomp
@@ -50,6 +50,11 @@ class MockedDownloadWorker(BaseDownloadWorker):
             )
 
 
+class MockedDownloadWorkerWithException(BaseDownloadWorker):
+    def get_one(self, request):
+        raise Exception('some thing wrong in request processing')
+
+
 class TestContribConcurrent(object):
 
     def test_concurrent_downloader(self):
@@ -83,6 +88,35 @@ class TestContribConcurrent(object):
                 for r in collect_middleware.requests]),
             set(MockedDownloadWorker.sitemap.keys())
         )
+
+    def test_exception_on_worker(self):
+        req_resp_midlleware = RequestResponseMiddleware(
+            prefix_url='http://localhost',
+            request_factory=UrllibHttpRequest,
+        )
+
+        collect_middleware = CollectRequestResponseMiddleware()
+
+        downloader = ConcurrentDownloader(
+            pool_size=5,
+            worker_class=MockedDownloadWorkerWithException,
+            worker_kwargs=None,
+            middlewares=(collect_middleware,)
+        )
+        downloader.middlewares.insert(0, req_resp_midlleware)
+
+        pomp = Pomp(
+            downloader=downloader,
+            pipelines=[],
+        )
+
+        class Crawler(DummyCrawler):
+            ENTRY_REQUESTS = '/root'
+
+        pomp.pump(Crawler())
+
+        assert_equal(len(collect_middleware.requests), 1)
+        assert_equal(len(collect_middleware.exceptions), 1)
 
 
 class TestContribConcurrentUrllib(object):

@@ -82,7 +82,6 @@ class Planned(object):
         self._state = PENDING
         self._result = None
         self._exception = None
-        self._waiters = []
         self._done_callbacks = []
 
     def _invoke_callbacks(self):
@@ -193,46 +192,6 @@ class Planned(object):
         elif self._state == FINISHED:
             return self._exception
 
-    # The following methods should only be used by Executors and in tests.
-    def set_running_or_notify_cancel(self):
-        """Mark the future as running or process any cancel notifications.
-
-        Should only be used by Executor implementations and unit tests.
-
-        If the future has been cancelled (cancel() was called and returned
-        True) then any threads waiting on the future completing (though calls
-        to as_completed() or wait()) are notified and False is returned.
-
-        If the future was not cancelled then it is put in the running state
-        (future calls to running() will return True) and True is returned.
-
-        This method should be called by Executor implementations before
-        executing the work associated with this future. If this method returns
-        False then the work should not be executed.
-
-        Returns:
-            False if the Planned was cancelled, True otherwise.
-
-        Raises:
-            RuntimeError: if this method was already called or if set_result()
-                or set_exception() was called.
-        """
-        if self._state == CANCELLED:
-            self._state = CANCELLED_AND_NOTIFIED
-            for waiter in self._waiters:
-                waiter.add_cancelled(self)
-            return False
-        elif self._state == PENDING:
-            self._state = RUNNING
-            return True
-        else:
-            log.critical(
-                'Planned %s in unexpected state: %s',
-                id(self),
-                self._state,
-            )
-            raise RuntimeError('Planned in unexpected state')
-
     def set_result(self, result):
         """Sets the return value of work associated with the future.
 
@@ -240,17 +199,4 @@ class Planned(object):
         """
         self._result = result
         self._state = FINISHED
-        for waiter in self._waiters:
-            waiter.add_result(self)
-        self._invoke_callbacks()
-
-    def set_exception(self, exception):
-        """Sets the result of the future as being the given exception.
-
-        Should only be used by Executor implementations and unit tests.
-        """
-        self._exception = exception
-        self._state = FINISHED
-        for waiter in self._waiters:
-            waiter.add_exception(self)
         self._invoke_callbacks()

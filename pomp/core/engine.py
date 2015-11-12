@@ -104,7 +104,7 @@ class Pomp(BaseEngine):
                     requests_from_items,
                     iterator(_requests),
                 )
-            else:  # pragma: no cover
+            else:
                 next_requests = requests_from_items
         else:
             next_requests = crawler.next_requests(response)

@@ -97,9 +97,8 @@ class UrllibAdapterMiddleware(BaseDownloaderMiddleware):
     """
 
     def process_request(self, req):
-        if isinstance(req, BaseHttpRequest):  # pragma: no cover
-            return req
-        return UrllibHttpRequest(req)
+        return req if isinstance(req, BaseHttpRequest) \
+            else UrllibHttpRequest(req)
 
     def process_response(self, response):
         return response

@@ -190,3 +190,22 @@ class TestSimplerCrawler(object):
             downloader=DummyDownloader(middlewares=[url_to_request_middl]),
         )
         pomp.pump(CrawlerWithoutItems())
+
+    def test_crawler_without_next_request_method_result(self):
+
+        class CrawlerWithoutNextRequestMethod(Crawler):
+            def next_requests(self, *args, **kwargs):
+                pass
+
+        road = RoadPipeline()
+        pomp = Pomp(
+            downloader=DummyDownloader(middlewares=[url_to_request_middl]),
+            pipelines=[
+                road,
+            ],
+        )
+        pomp.pump(CrawlerWithoutNextRequestMethod())
+        assert_equal(set([item.url for item in road.collection]), set([
+            'http://python.org/1',
+            'http://python.org/1/trash',
+        ]))

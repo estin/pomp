@@ -1,8 +1,13 @@
 import json
+import logging
+
 from pomp.core.base import BaseCrawler, BaseDownloaderMiddleware, BasePipeline
 from pomp.core.base import BaseHttpRequest, BaseHttpResponse
 from pomp.core.base import BaseDownloader
 from pomp.core.item import Item, Field
+
+
+log = logging.getLogger()
 
 
 class DummyItem(Item):
@@ -16,11 +21,7 @@ class DummyItem(Item):
 class DummyCrawler(BaseCrawler):
     ENTRY_REQUESTS = None
 
-    def __init__(self):
-        super(DummyCrawler, self).__init__()
-
     def next_requests(self, response):
-        print("NEXT REQUESTS on", response, response.body, type(response.body))
         res = response.body.get('links', [])
         return res
 

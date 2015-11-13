@@ -66,6 +66,7 @@ class Pomp(BaseEngine):
         self.queue = queue or self.DEFAULT_QUEUE_CLASS(
             use_lifo=not breadth_first
         )
+        self.queue_semaphore = None
 
     def response_callback(self, crawler, response):
         try:
@@ -81,9 +82,7 @@ class Pomp(BaseEngine):
                 )
             )
 
-    def on_response(self, crawler, response):
-
-        result = crawler.process(response)
+    def on_parse_result(self, crawler, result, response):
 
         if isinstance(result, types.GeneratorType):
             requests_from_items = []
@@ -110,6 +109,30 @@ class Pomp(BaseEngine):
             next_requests = crawler.next_requests(response)
 
         return next_requests
+
+    def on_response(self, crawler, response):
+
+        result = crawler.process(response)
+
+        if isinstance(result, Planned):
+            planned = Planned()
+
+            def _(r):
+                result = r.result()
+
+                if isinstance(result, BaseDownloadException):
+                    self.downloader._process_exception(result)
+                    planned.set_result(None)
+                else:
+                    planned.set_result(
+                        self.on_parse_result(crawler, result, response)
+                    )
+
+            result.add_done_callback(_)
+            return planned
+
+        else:
+            return self.on_parse_result(crawler, result, response)
 
     def _process_result(self, crawler, items):
         # requests may be yield with items
@@ -143,7 +166,6 @@ class Pomp(BaseEngine):
                     self._put_requests(
                         self.response_callback(crawler, r.result())
                     )
-                    self._request_done()
                 response.add_done_callback(_)
             else:
                 self._put_requests(
@@ -151,7 +173,6 @@ class Pomp(BaseEngine):
                         crawler, response
                     )
                 )
-                self._request_done()
 
     def prepare(self, crawler):
         log.info('Prepare downloader: %s', self.downloader)
@@ -167,9 +188,7 @@ class Pomp(BaseEngine):
         # add ENTRY_REQUESTS to the queue
         next_requests = getattr(crawler, 'ENTRY_REQUESTS', None)
         if next_requests:
-            self._put_requests(
-                iterator(next_requests)
-            )
+            self._put_requests(iterator(next_requests), request_done=False)
 
         # configure queue semaphore
         self.queue_semaphore = self.get_queue_semaphore()
@@ -202,12 +221,22 @@ class Pomp(BaseEngine):
 
         self.finish(crawler)
 
-    def _put_requests(self, requests):
-        if not requests:
-            return
-        for request in requests:
-            self.in_progress += 1
-            self.queue.put_requests(request)
+    def _put_requests(self, requests, request_done=True):
+
+        def _put(items):
+            if items:
+                for item in items:
+                    self.in_progress += 1
+                    self.queue.put_requests(item)
+            if request_done:
+                self._request_done()
+
+        if isinstance(requests, Planned):
+            def _(r):
+                _put(r.result())
+            requests.add_done_callback(_)
+        else:
+            _put(requests)
 
     def _request_done(self):
         if self.queue_semaphore:

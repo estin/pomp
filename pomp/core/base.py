@@ -39,9 +39,6 @@ class BaseCrawler(object):  # pragma: no cover
     """
     ENTRY_REQUESTS = None
 
-    def __init__(self):
-        self._in_process = 0
-
     def next_requests(self, response):  # pragma: no cover
         """Getting next requests for processing.
 

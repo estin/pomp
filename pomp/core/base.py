@@ -188,6 +188,9 @@ class BaseDownloader(object):
         """
         return 0
 
+    def stop(self):
+        pass
+
     def _process_resp(self, response):
         is_error = isinstance(response, BaseDownloadException)
         func = 'process_response' if not is_error else 'process_exception'

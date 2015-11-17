@@ -8,6 +8,11 @@ except ImportError:
     from io import StringIO
 
 
+sys.path.append(
+    os.path.join(os.path.dirname(__file__), 'examples')
+)
+
+
 FOR_TESTING = (
     './docs/examples/minimalapp.py',
     './docs/examples/customdowloader.py',
@@ -18,12 +23,14 @@ FOR_TESTING = (
 
 
 if sys.version_info >= (3, 4):
-    sys.path.append(
-        os.path.join(os.path.dirname(__file__), 'examples')
-    )
     FOR_TESTING += (
         './examples/e04_aiohttp.py',
     )
+
+
+FOR_TESTING += (
+    './examples/e05_phantomjs.py',
+)
 
 
 class Capturing(list):

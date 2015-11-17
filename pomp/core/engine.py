@@ -194,6 +194,7 @@ class Pomp(BaseEngine):
         self.queue_semaphore = self.get_queue_semaphore()
 
     def finish(self, crawler):
+        self.downloader.stop()
         for pipe in self.pipelines:
             log.info('Stop pipe: %s', pipe)
             pipe.stop(crawler)

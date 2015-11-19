@@ -26,5 +26,5 @@ coverage combine
 
 if [ ! -z "$CODECOV_REPO_TOKEN" ]; then
     pip install codecov
-    codecov --token=$CODECOV_REPO_TOKEN
+    codecov --token=$CODECOV_REPO_TOKEN > /dev/null 2>&1
 fi

@@ -3,6 +3,7 @@ Concurrent downloaders
 """
 import os
 import sys
+import signal
 import logging
 import itertools
 from functools import partial
@@ -96,6 +97,9 @@ class ConcurrentDownloader(BaseDownloader, ConcurrentMixin):
             'worker_kwargs': worker_kwargs or {},
         }
 
+        # ctrl-c support for python2.x
+        signal.signal(signal.SIGINT, lambda s, f: self.stop)
+
         super(ConcurrentDownloader, self).__init__(
             middlewares=middlewares
         )
@@ -120,6 +124,9 @@ class ConcurrentDownloader(BaseDownloader, ConcurrentMixin):
 
     def get_workers_count(self):
         return self.pool_size
+
+    def stop(self):
+        self.executor.shutdown()
 
 
 class ConcurrentUrllibDownloader(ConcurrentDownloader):

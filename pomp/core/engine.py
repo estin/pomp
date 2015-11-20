@@ -83,30 +83,32 @@ class Pomp(BaseEngine):
             )
 
     def on_parse_result(self, crawler, result, response):
-
+        requests_from_items = ()
         if isinstance(result, types.GeneratorType):
-            requests_from_items = []
             for items in result:
-                requests_from_items += self._process_result(
-                    crawler, iterator(items)
+                requests_from_items = itertools.chain(
+                    requests_from_items,
+                    self._process_result(
+                        crawler, iterator(items)
+                    )
                 )
         else:
             requests_from_items = self._process_result(
                 crawler, iterator(result)
             )
 
+        next_requests = crawler.next_requests(response)
+
         if requests_from_items:
-            # chain result of crawler extract_items and next_requests methods
-            _requests = crawler.next_requests(response)
-            if _requests:
+            if next_requests:
+                # chain result of crawler extract_items
+                # and next_requests methods
                 next_requests = itertools.chain(
                     requests_from_items,
-                    iterator(_requests),
+                    iterator(next_requests),
                 )
             else:
                 next_requests = requests_from_items
-        else:
-            next_requests = crawler.next_requests(response)
 
         return next_requests
 
@@ -135,29 +137,22 @@ class Pomp(BaseEngine):
             return self.on_parse_result(crawler, result, response)
 
     def _process_result(self, crawler, items):
-        # requests may be yield with items
-        next_requests = list(filter(
-            lambda i: isinstance(i, BaseHttpRequest) or isstring(i),
-            items,
-        ))
 
-        # filter items by instance type
-        items = filter(
-            lambda i: isinstance(i, Item),
-            items,
-        )
+        for item in items:
 
-        # pipe items
-        for pipe in self.pipelines:
-            items = list(filter(
-                None,
-                map(
-                    lambda i: pipe.process(crawler, i),
-                    items
-                ),
-            ))
+            # proccess item as data item
+            if isinstance(item, Item):
+                # process item by pipes
+                for pipe in self.pipelines:
+                    item = pipe.process(crawler, item)
 
-        return next_requests
+                    # item filtered - stop pipe processing
+                    if not item:
+                        break
+
+            # yield item as request
+            if isinstance(item, BaseHttpRequest) or isstring(item):
+                yield item
 
     def process_requests(self, requests, crawler):
         for response in self.downloader.process(requests, crawler):

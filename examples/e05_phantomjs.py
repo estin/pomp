@@ -4,6 +4,7 @@ requires: selenium, lxml
 """
 import os
 import sys
+import time
 import signal
 import logging
 import collections
@@ -85,8 +86,16 @@ class PhantomDownloadWorker(BaseDownloadWorker):
             )
         )
 
+        # scroll down 3 times to load older tweets
+        for i in range(0, 3):
+            driver.execute_script(
+                "window.document.body.scrollTop = document.body.scrollHeight;"
+            )
+            # wait and allow new content to load
+            time.sleep(1)
+
         # finish - get current document body
-        body = driver.execute_script("return document.documentElement.outerHTML")  # noqa
+        body = driver.execute_script("return document.documentElement.outerHTML;")  # noqa
         log.debug("[PhantomWorker:%s] Finish %s", self.pid, request)
         driver.close()
         return PhantomResponse(request, body)

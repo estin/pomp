@@ -98,7 +98,8 @@ class ConcurrentDownloader(BaseDownloader, ConcurrentMixin):
         }
 
         # ctrl-c support for python2.x
-        signal.signal(signal.SIGINT, lambda s, f: self.stop)
+        # trap sigint
+        signal.signal(signal.SIGINT, lambda s, f: s)
 
         super(ConcurrentDownloader, self).__init__(
             middlewares=middlewares

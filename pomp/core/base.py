@@ -307,11 +307,7 @@ class BaseResponse(object):  # pragma: no cover
 
 class BaseHttpRequest(BaseRequest):  # pragma: no cover
     """HTTP request interface"""
-
-    @property
-    def url(self):
-        """Requested URL"""
-        raise NotImplementedError()
+    pass
 
 
 class BaseHttpResponse(BaseResponse):  # pragma: no cover
@@ -320,11 +316,6 @@ class BaseHttpResponse(BaseResponse):  # pragma: no cover
     @property
     def request(self):
         """Request :class:`BaseHttpRequest`"""
-        raise NotImplementedError()
-
-    @property
-    def response(self):
-        """Original response object fetched in :meth:`BaseDownloader.get`"""
         raise NotImplementedError()
 
 

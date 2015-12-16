@@ -74,7 +74,6 @@ class UrllibHttpResponse(BaseHttpResponse):
 
     def __init__(self, request, response):
         self.req = request
-        # self.resp = response
 
         if not isinstance(response, Exception):
             self.body = response.read()
@@ -82,10 +81,6 @@ class UrllibHttpResponse(BaseHttpResponse):
     @property
     def request(self):
         return self.req
-
-    # @property
-    # def response(self):
-    #     return self.resp
 
     def __str__(self):
         return '<UrllibHttpResponse on {s.request}>'.format(s=self)

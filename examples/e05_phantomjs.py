@@ -35,12 +35,8 @@ log = logging.getLogger(__name__)
 
 class PhantomRequest(BaseHttpRequest):
     def __init__(self, url, level=None):
-        self._url = url
+        self.url = url
         self.level = level or 0
-
-    @property
-    def url(self):
-        return self._url
 
     def __str__(self):
         return '<{s.__class__.__name__} level:{s.level} url:{s.url} ' \
@@ -55,10 +51,6 @@ class PhantomResponse(BaseHttpResponse):
     @property
     def request(self):
         return self.req
-
-    @property
-    def response(self):
-        raise self.body
 
 
 class PhantomDownloadWorker(BaseDownloadWorker):

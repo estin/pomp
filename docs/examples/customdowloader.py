@@ -7,28 +7,19 @@ from pomp.core.utils import iterator
 
 class ReqRequest(BaseHttpRequest):
     def __init__(self, url):
-        self._url = url
-
-    @property
-    def url(self):
-        return self._url
+        self.url = url
 
 
 class ReqResponse(BaseHttpResponse):
     def __init__(self, request, response):
         self.req = request
-        self.resp = response
 
         if not isinstance(response, Exception):
-            self.body = self.resp.text
+            self.body = response.text
 
     @property
     def request(self):
         return self.req
-
-    @property
-    def response(self):
-        return self.resp
 
 
 class RequestsDownloader(BaseDownloader):

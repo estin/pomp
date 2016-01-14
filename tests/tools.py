@@ -91,14 +91,10 @@ class PrintPipeline(BasePipeline):
 class DummyRequest(BaseHttpRequest):
 
     def __init__(self, url):
-        self.request = url
-
-    @property
-    def url(self):
-        return self.request
+        self.url = url
 
     def __repr__(self):
-        return '<DummyRequest url={s.request}>'.format(s=self)
+        return '<DummyRequest url={s.url}>'.format(s=self)
 
 
 class DummyResponse(BaseHttpResponse):
@@ -110,10 +106,6 @@ class DummyResponse(BaseHttpResponse):
     @property
     def request(self):
         return self.req
-
-    @property
-    def response(self):
-        return self.response
 
     def __repr__(self):
         return '<DummyResponse on={s.req}>'.format(s=self)

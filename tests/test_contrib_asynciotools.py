@@ -27,11 +27,7 @@ log = logging.getLogger(__name__)
 
 class AiohttpRequest(BaseHttpRequest):
     def __init__(self, url):
-        self._url = url
-
-    @property
-    def url(self):
-        return self._url
+        self.url = url
 
     def __str__(self):
         return '<AiohttpRequest url:{s.url}>'.format(s=self)
@@ -45,10 +41,6 @@ class AiohttpResponse(BaseHttpResponse):
     @property
     def request(self):
         return self.req
-
-    @property
-    def response(self):
-        raise self.body
 
 
 class AiohttpAdapterMiddleware(BaseDownloaderMiddleware):

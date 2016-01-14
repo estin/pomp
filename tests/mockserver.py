@@ -2,7 +2,6 @@ import os
 import sys
 import time
 import json
-import random
 import logging
 import multiprocessing
 from wsgiref.util import setup_testing_defaults
@@ -108,10 +107,13 @@ class HttpServer(object):
         app.sitemap = self.sitemap
 
         self.host = host
-        self.port = port or (8000 + random.randint(0, 100))
-        self.location = 'http://%s:%s' % (self.host, self.port)
+        self.port = port or 0
 
         self.httpd = make_server(self.host, self.port, app)
+
+        self.port = self.httpd.socket.getsockname()[1]
+        self.location = 'http://%s:%s' % (self.host, self.port)
+
         self.process = multiprocessing \
             .Process(target=self.httpd.serve_forever)
 

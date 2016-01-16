@@ -3,7 +3,7 @@ Base classes
 
  .. note::
 
-    All this class must be subclassed
+    All classes in this package must be subclassed.
 """
 import sys
 import logging
@@ -21,38 +21,36 @@ class BaseCommand(object):  # pragma: no cover
 class BaseCrawler(object):  # pragma: no cover
     """Crawler interface
 
-    Crawler must resolve two main tasks:
+    The crawler must implement two tasks:
 
     - Extract data from response
-    - Extract next urls for following processing from response
+    - Extract urls from response for follow-up processing
 
-    Each crawler must have starting point - entry url.
-    To set entry url declare them as class attribute ``ENTRY_REQUESTS``
-    like that::
+    Each crawler must have one or more url starting points.
+    To set the entry urls, declare them as class attribute ``ENTRY_REQUESTS``::
 
         class MyGoogleCrawler(BaseCrawler):
             ENTRY_REQUESTS = 'http://google.com/'
             ...
 
-    ``ENTRY_REQUESTS`` may be list of urls or list of requests
+    ``ENTRY_REQUESTS`` may be a list of urls or list of requests
     (instances of :class:`BaseHttpRequest`).
     """
     ENTRY_REQUESTS = None
 
     def next_requests(self, response):  # pragma: no cover
-        """Getting next requests for processing.
+        """Returns follow-up requests for processing.
 
-        Called after `extract_items` method.
+        Called after the `extract_items` method.
 
         :note:
-            Subclass can not implement thid method.
+            Subclass may not implement this method.
             Next requests may be returened with items in `extrat_items` method.
 
         :param response: the instance of :class:`BaseHttpResponse`
-        :rtype: ``None`` or request or requests (instnace of
-            :class:`BaseHttpRequest` or str). If ``None`` returned
-            this mean that page have not any urls to following
-            processing
+        :rtype: ``None`` or request or requests (instance of
+            :class:`BaseHttpRequest` or str). ``None`` response indicates that
+            that this page does not any urls for follow-up processing.
         """
         pass
 
@@ -60,7 +58,7 @@ class BaseCrawler(object):  # pragma: no cover
         return self.extract_items(response)
 
     def extract_items(self, response):
-        """Extract items and next requests - parse page.
+        """Parse page and extract items.
 
         :param response: the instance of :class:`BaseHttpResponse`
         :rtype: item or items (isntance of :class:`pomp.core.item.Item`)
@@ -109,8 +107,9 @@ class BaseDownloadWorker(object):  # pragma: no cover
 class BaseDownloader(object):
     """Downloader interface
 
-    Downloader must resolve one main task - execute request
-    and fetch response.
+    The downloader must implement one task:
+
+    - make http request and fetch response.
 
     :param middlewares: list of middlewares, instances
                         of :class:`BaseDownloaderMiddleware`
@@ -123,7 +122,7 @@ class BaseDownloader(object):
             self.middlewares = list(self.middlewares)
 
     def prepare(self):
-        """Prepare downloader before start processing"""
+        """Prepare downloader before processing starts."""
         self.request_middlewares = self.middlewares
         self.response_middlewares = self.middlewares[:]
         self.response_middlewares.reverse()
@@ -228,7 +227,7 @@ class BaseDownloader(object):
 class BasePipeline(object):  # pragma: no cover
     """Pipeline interface
 
-    The main goals of pipe is:
+    The function of pipes are to:
 
     - filter items
     - change items
@@ -238,27 +237,27 @@ class BasePipeline(object):  # pragma: no cover
     def start(self, crawler):
         """Initialize pipe
 
-        Open files and database connections etc.
+        Open files and database connections, etc.
 
-        :param crawler: crawler who extract items
+        :param crawler: crawler that extracts items
         """
         pass
 
     def process(self, crawler, item):
         """Process extracted item
 
-        :param crawler: crawler who extract items
+        :param crawler: crawler that extracts items
         :param item: extracted item
-        :rtype: item or ``None`` if this item must be skipped
+        :rtype: item or ``None`` if this item is to be skipped
         """
         raise NotImplementedError()
 
     def stop(self, crawler):
         """Finalize pipe
 
-        Close files and database connections etc.
+        Close files and database connections, etc.
 
-        :param crawler: crawler who extract items
+        :param crawler: crawler that extracts items
         """
         pass
 
@@ -270,14 +269,12 @@ class BaseDownloaderMiddleware(object):
         """Change request before it will be executed by downloader
 
         :param request: instance of :class:`BaseHttpRequest`
-        :rtype: changed request or ``None`` to skip
-                execution of this request
+        :rtype: changed request or ``None`` to skip execution of this request
         """
         return request
 
     def process_response(self, response):
-        """Change response before it will be sent to crawler for exctracting
-        items
+        """Modify response before content is extracted by the crawler.
 
         :param response: instance of :class:`BaseHttpResponse`
         :rtype: changed response or ``None`` to skip

@@ -44,9 +44,9 @@ class SimpleQueue(BaseQueue):
 class Pomp(BaseEngine):
     """Configuration object
 
-    Main goal of class is to glue together all parts of application:
+    This class glues together all parts of a Pomp instance:
 
-    - Downloader implementation with middlewares
+    - Downloader implementation and middleware
     - Item pipelines
     - Crawler
 
@@ -198,7 +198,7 @@ class Pomp(BaseEngine):
     def pump(self, crawler):
         """Start crawling
 
-        :param crawler: isntance of :class:`pomp.core.base.BaseCrawler`
+        :param crawler: instance of :class:`pomp.core.base.BaseCrawler`
         """
         self.prepare(crawler)
 

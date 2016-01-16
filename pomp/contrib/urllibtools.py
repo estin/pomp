@@ -1,7 +1,8 @@
 """
-Simple downloaders and middlewares for fetching data by standard
-`urlopen` function from `urllib` package for python3.x
-or `urllib2` for python2.7+
+Downloader and middleware implementations.
+
+- Downloaders: Fetches data by standard `urllib.urlopen` (Python 3.x) or
+  `urllib2.urlopen` (Python 2.7+)
 """
 import sys
 try:

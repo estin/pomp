@@ -131,7 +131,7 @@ class ConcurrentDownloader(BaseDownloader, ConcurrentMixin):
 
 
 class ConcurrentUrllibDownloader(ConcurrentDownloader):
-    """Concurrent ProcessPoolExecutor downloader for fetching data by urllib
+    """Concurrent ProcessPoolExecutor downloader for fetching data with urllib
     :class:`pomp.contrib.SimpleDownloader`
 
     :param pool_size: pool size of ProcessPoolExecutor

@@ -1,22 +1,25 @@
 Pomp
 ====
 
-Pomp is a screen scraping and web crawling framework. Like `Scrapy`_, but more simple.
-
-Inspired by `Scrapy`_ but simpler implementation and without hard `Twisted`_ dependency.
+Pomp is a screen scraping and web crawling framework. Pomp is inspired by and
+similar to `Scrapy`_, but has a simpler implementation that lacks the hard
+`Twisted`_ dependency.
 
 Features:
 
-* pure python
-* one dependency only for python2.x - `concurrent.futures`_ (backport
-  package for python2.x)
-* one file applications, without project layouts and others restrictions
-* meta framework like `Paste`_ (a framework for scrapping frameworks)
-* extendible networking, may be used any sync or async methods
-* without parsing libraries in the core, use you favorites
-* can be distributed, designed to use an external queue
+* Pure python
+* Only one dependency for Python 2.x - `concurrent.futures`_ (backport of
+  package for Python 2.x)
+* Supports one file applications; Pomps doesn't force a specific project layout
+  or other restrictions.
+* Pomp is a meta framework like `Paste`_: you may use it to create your own
+  scraping framework.
+* Extensible networking: you may use any sync or async method.
+* No parsing libraries in the core; use you preferred approach.
+* Pomp instances may be distributed and are designed to work with an external
+  queue.
 
-Do not care about:
+Pomp makes no attempt to accomodate:
 
 * redirects
 * proxies
@@ -26,8 +29,8 @@ Do not care about:
 * authentication
 * etc.
 
-If you want some proxies, redirects or others stuff implement it by our
-self or use great library - `requests`_ as Pomp downloader.
+If you want proxies, redirects, or similar, you may use the excellent
+`requests`_ library as the Pomp downloader.
 
 `Pomp examples`_
 
@@ -68,7 +71,8 @@ Docs status:
     :target: https://readthedocs.org/projects/pomp/?badge=latest
     :alt: Documentation Status
 
-Pomp is written and maintained by Evgeniy Tatarkin and is licensed under BSD license.
+Pomp is written and maintained by Evgeniy Tatarkin and is licensed under the
+BSD license.
 
 .. _Scrapy: http://scrapy.org/
 .. _Twisted: http://twistedmatrix.com/

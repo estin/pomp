@@ -17,8 +17,7 @@ from pomp.core.utils import PY3, isstring
 # https://docs.python.org/2/library/csv.html#examples
 class UnicodeCsvWriter:
     """
-    A CSV writer which will write rows to CSV file "f",
-    which is encoded in the given encoding.
+    A CSV writer that writes rows to CSV file `f` with the given encoding.
     """
 
     def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
@@ -56,9 +55,9 @@ class CsvPipeline(BasePipeline):
 
     Params `*args` and `**kwargs` passed to ``csv.writer`` constuctor.
 
-    :param output_file: filename of file like object. If `output_file` is file
-                        like object then after pipe stoped file will be
-                        not closed
+    :param output_file: Filename of file-like object or a file object. If
+                        `output_file` is a file-like object, then the file will
+                        remain open after the pipe is stopped.
     """
 
     def __init__(self, output_file, *args, **kwargs):

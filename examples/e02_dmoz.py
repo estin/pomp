@@ -22,7 +22,7 @@ from lxml import html
 from pomp.core.base import BaseCrawler
 from pomp.contrib.pipelines import CsvPipeline
 from pomp.core.base import BasePipeline, BaseDownloaderMiddleware
-from pomp.core.item import Item, Field
+from pomp.contrib.item import Item, Field
 from pomp.contrib.urllibtools import UrllibHttpRequest
 
 

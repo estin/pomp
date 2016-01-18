@@ -1,6 +1,6 @@
 import re
 from pomp.core.base import BaseCrawler
-from pomp.core.item import Item, Field
+from pomp.contrib.item import Item, Field
 from pomp.contrib.urllibtools import UrllibHttpRequest
 
 

@@ -5,7 +5,7 @@ import sys
 import re
 import logging
 from pomp.core.base import BaseCrawler, BasePipeline
-from pomp.core.item import Item, Field
+from pomp.contrib.item import Item, Field
 from pomp.contrib.urllibtools import (
     UrllibDownloader, UrllibHttpRequest,
 )

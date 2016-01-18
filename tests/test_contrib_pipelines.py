@@ -3,7 +3,7 @@ import csv
 import codecs
 import logging
 from nose.tools import assert_equal
-from pomp.core.item import Item, Field
+from pomp.contrib.item import Item, Field
 from pomp.contrib.pipelines import CsvPipeline
 
 

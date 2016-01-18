@@ -31,6 +31,10 @@ Simple pipelines
     :members:
 
 
+.. automodule:: pomp.contrib.item
+    :members:
+
+
 Engine
 ******
 
@@ -42,9 +46,6 @@ Interfaces
 **********
 
 .. automodule:: pomp.core.base
-    :members:
-
-.. automodule:: pomp.core.item
     :members:
 
 

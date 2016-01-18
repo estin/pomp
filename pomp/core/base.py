@@ -61,8 +61,10 @@ class BaseCrawler(object):  # pragma: no cover
         """Parse page and extract items.
 
         :param response: the instance of :class:`BaseHttpResponse`
-        :rtype: item or items (isntance of :class:`pomp.core.item.Item`)
-            or request or requests (instance of :class:`BaseHttpRequest`)
+        :rtype: item/items of any type
+            or type of :class:`pomp.contrib.item.Item`
+            or request/requests type of :class:`BaseHttpRequest`
+            or string/strings for following processing as requests
         """
         raise NotImplementedError()
 

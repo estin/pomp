@@ -26,7 +26,7 @@ from pomp.core.base import (
     BaseCrawler,
 )
 from pomp.contrib.concurrenttools import ConcurrentDownloader
-from pomp.core.item import Item, Field
+from pomp.contrib.item import Item, Field
 
 
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)

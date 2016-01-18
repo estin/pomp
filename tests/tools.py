@@ -4,7 +4,7 @@ import logging
 from pomp.core.base import BaseCrawler, BaseDownloaderMiddleware, BasePipeline
 from pomp.core.base import BaseHttpRequest, BaseHttpResponse
 from pomp.core.base import BaseDownloader
-from pomp.core.item import Item, Field
+from pomp.contrib.item import Item, Field
 
 
 log = logging.getLogger()

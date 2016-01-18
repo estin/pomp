@@ -1,6 +1,6 @@
 import pickle
 from nose.tools import assert_equal
-from pomp.core.item import Item, Field
+from pomp.contrib.item import Item, Field
 
 
 class TItem(Item):

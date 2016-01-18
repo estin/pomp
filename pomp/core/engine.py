@@ -7,7 +7,6 @@ import logging
 import itertools
 import threading
 
-from pomp.core.item import Item
 from pomp.core.base import (
     BaseEngine, BaseCommand, BaseQueue, BaseHttpRequest, BaseDownloadException,
 )
@@ -140,19 +139,20 @@ class Pomp(BaseEngine):
 
         for item in items:
 
-            # proccess item as data item
-            if isinstance(item, Item):
-                # process item by pipes
+            if not item:
+                continue
+
+            # yield item as request
+            if isinstance(item, BaseHttpRequest) or isstring(item):
+                yield item
+            else:
+                # proccess item as data item by pipes
                 for pipe in self.pipelines:
                     item = pipe.process(crawler, item)
 
                     # item filtered - stop pipe processing
                     if not item:
                         break
-
-            # yield item as request
-            if isinstance(item, BaseHttpRequest) or isstring(item):
-                yield item
 
     def process_requests(self, requests, crawler):
         for response in self.downloader.process(requests, crawler):

@@ -14,7 +14,7 @@ except ImportError:
 
 from pomp.core.base import BaseQueue, BaseCrawler
 from pomp.core.engine import Pomp, StopCommand
-from pomp.core.item import Item, Field
+from pomp.contrib.item import Item, Field
 from pomp.contrib.urllibtools import UrllibDownloader, UrllibHttpRequest
 
 

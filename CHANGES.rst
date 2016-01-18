@@ -8,6 +8,8 @@ Version 0.2.0
 
 Not released yet
 
+- pomp.core.item moved to pomp.contrib.item without backward
+  compatibility https://github.com/estin/pomp/issues/6#issuecomment-172342598
 - AioPomp with asyncio support
 - queue semaphore to prevent fetching more requests than downloader can
   process now

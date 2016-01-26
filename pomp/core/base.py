@@ -158,20 +158,19 @@ class BaseDownloader(object):
 
             requests.append(request)
 
-        if not requests:
-            return
+        if requests:
 
-        for response in self.get(requests):
-            if isinstance(response, Planned):  # async behavior
-                future = Planned()
+            for response in self.get(requests):
+                if isinstance(response, Planned):  # async behavior
+                    future = Planned()
 
-                def _chain(res):
-                    future.set_result(self._process_resp(res.result()))
+                    def _chain(res):
+                        future.set_result(self._process_resp(res.result()))
 
-                response.add_done_callback(_chain)
-                yield future
-            else:  # sync behavior
-                yield self._process_resp(response)
+                    response.add_done_callback(_chain)
+                    yield future
+                else:  # sync behavior
+                    yield self._process_resp(response)
 
     def get(self, requests):  # pragma: no cover
         """Execute requests
@@ -215,14 +214,16 @@ class BaseDownloader(object):
         return response
 
     def _process_exception(self, exception):
+        value = None
         for middleware in self.response_middlewares:
             try:
                 value = middleware.process_exception(exception)
+                if value is None:  # stop processing exception
+                    break
             except Exception:
                 log.exception(
-                    'Exception on prcess %s by %s', exception, middleware)
-            if not value:  # stop processing exception  # pragma: no cover
-                break
+                    'Exception on prcess %s by %s', exception, middleware
+                )
         return value
 
 

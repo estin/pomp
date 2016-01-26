@@ -120,7 +120,7 @@ class TestContribAsyncio(object):
             ENTRY_REQUESTS = '/root'
 
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(ensure_future(pomp.pump(Crawler())))
+        loop.run_until_complete(pomp.pump(Crawler()))
         loop.close()
 
         assert_set_equal(

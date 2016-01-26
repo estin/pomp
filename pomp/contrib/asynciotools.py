@@ -9,7 +9,7 @@ except ImportError:  # pragma: no cover
 
 
 from pomp.core.base import BaseQueue
-from pomp.core.utils import iterator
+from pomp.core.utils import iterator, Planned
 from pomp.core.engine import StopCommand
 from pomp.core.engine import Pomp as SyncPomp
 
@@ -26,8 +26,9 @@ class SimpleAsyncioQueue(BaseQueue):
     def get_requests(self):
         return (yield from self.q.get())
 
+    @asyncio.coroutine
     def put_requests(self, requests):
-        return ensure_future(self.q.put(requests))
+        yield from self.q.put(requests)
 
 
 class AioPomp(SyncPomp):
@@ -40,6 +41,14 @@ class AioPomp(SyncPomp):
         :param crawler: isntance of :class:`pomp.core.base.BaseCrawler`
         """
         self.prepare(crawler)
+
+        # add ENTRY_REQUESTS to the queue
+        next_requests = getattr(crawler, 'ENTRY_REQUESTS', None)
+        if next_requests:
+            yield from self._put_requests(
+                iterator(next_requests), request_done=False,
+            )
+
         while True:
 
             # do not fetch from queue request more than downloader can process
@@ -52,10 +61,75 @@ class AioPomp(SyncPomp):
                 self.stop = True
                 break
             else:
-                self.process_requests(
+                yield from self.process_requests(
                     iterator(next_requests), crawler,
                 )
         self.finish(crawler)
+
+    @asyncio.coroutine
+    def process_requests(self, requests, crawler):
+        for response in self.downloader.process(requests, crawler):
+            if isinstance(response, Planned):
+                future = asyncio.Future()
+
+                def _(r):
+                    ensure_future(
+                        self._put_requests(
+                            self.response_callback(crawler, r.result())
+                        )
+                    ).add_done_callback(
+                        future.set_result
+                    )
+
+                response.add_done_callback(_)
+
+                yield from future
+            else:
+                yield from self._put_requests(
+                    self.response_callback(
+                        crawler, response
+                    )
+                )
+
+    @asyncio.coroutine
+    def _put_requests(self, requests, request_done=True):
+
+        @asyncio.coroutine
+        def _put(items):
+
+            if items:
+                for item in items:
+                    self.in_progress += 1
+                    yield from self.queue.put_requests(item)
+
+            if request_done:
+                yield from self._request_done()
+
+        if isinstance(requests, Planned):
+            future = asyncio.Future()
+
+            def _(r):
+                ensure_future(
+                    _put(r.result())
+                ).add_done_callback(
+                    future.set_result
+                )
+
+            requests.add_done_callback(_)
+
+            yield from future
+        else:
+            yield from _put(requests)
+
+    @asyncio.coroutine
+    def _request_done(self):
+        if self.queue_semaphore:
+            self.queue_semaphore.release()
+
+        self.in_progress -= 1
+        if self.in_progress == 0:
+            # work done
+            yield from self.queue.put_requests(StopCommand())
 
     def get_queue_semaphore(self):
         workers_count = self.downloader.get_workers_count()

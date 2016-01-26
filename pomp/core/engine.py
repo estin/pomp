@@ -180,11 +180,6 @@ class Pomp(BaseEngine):
             log.info('Start pipe: %s', pipe)
             pipe.start(crawler)
 
-        # add ENTRY_REQUESTS to the queue
-        next_requests = getattr(crawler, 'ENTRY_REQUESTS', None)
-        if next_requests:
-            self._put_requests(iterator(next_requests), request_done=False)
-
         # configure queue semaphore
         self.queue_semaphore = self.get_queue_semaphore()
 
@@ -201,6 +196,13 @@ class Pomp(BaseEngine):
         :param crawler: instance of :class:`pomp.core.base.BaseCrawler`
         """
         self.prepare(crawler)
+
+        # add ENTRY_REQUESTS to the queue
+        next_requests = getattr(crawler, 'ENTRY_REQUESTS', None)
+        if next_requests:
+            self._put_requests(
+                iterator(next_requests), request_done=False,
+            )
 
         while True:
 

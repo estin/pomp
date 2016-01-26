@@ -1,5 +1,6 @@
 import logging
 import asyncio
+from functools import partial
 
 
 try:
@@ -12,6 +13,10 @@ from pomp.core.base import BaseQueue
 from pomp.core.utils import iterator, Planned
 from pomp.core.engine import StopCommand
 from pomp.core.engine import Pomp as SyncPomp
+
+from pomp.contrib.concurrenttools import (
+    _run_crawler_worker, ConcurrentCrawler,
+)
 
 
 log = logging.getLogger(__name__)
@@ -135,3 +140,26 @@ class AioPomp(SyncPomp):
         workers_count = self.downloader.get_workers_count()
         if workers_count > 1:
             return asyncio.BoundedSemaphore(workers_count)
+
+
+class AioConcurrentCrawler(ConcurrentCrawler):
+
+    def process(self, response):
+
+        # build Planned object
+        done_future = Planned()
+
+        # fire done_future when asyncio finish response processing by
+        # crawler worker in executor
+        asyncio.ensure_future(
+            asyncio.get_event_loop().run_in_executor(
+                self.executor,
+                _run_crawler_worker,
+                self.worker_params,
+                response,
+            )
+        ).add_done_callback(
+            partial(self._done, response, done_future)
+        )
+
+        return done_future

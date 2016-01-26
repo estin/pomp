@@ -12,7 +12,9 @@ from pomp.core.base import (
     BaseHttpRequest, BaseHttpResponse, BaseDownloader,
     BaseDownloaderMiddleware,
 )
-from pomp.contrib.asynciotools import AioPomp, ensure_future
+from pomp.contrib.asynciotools import (
+    ensure_future, AioPomp, AioConcurrentCrawler,
+)
 from pomp.core.utils import Planned
 
 
@@ -87,6 +89,10 @@ class AiohttpDownloader(BaseDownloader):
             yield planned
 
 
+class Crawler(DummyCrawler):
+    ENTRY_REQUESTS = '/root'
+
+
 class TestContribAsyncio(object):
     @classmethod
     def setupClass(cls):
@@ -96,35 +102,55 @@ class TestContribAsyncio(object):
     @classmethod
     def teardownClass(cls):
         cls.httpd.stop()
+        asyncio.get_event_loop().close()
 
-    def test_asyncio_engine(self):
-        req_resp_midlleware = RequestResponseMiddleware(
+    def setup(self):
+        self.req_resp_midlleware = RequestResponseMiddleware(
             prefix_url=self.httpd.location,
             request_factory=lambda x: x,
         )
 
-        collect_middleware = CollectRequestResponseMiddleware()
+        self.collect_middleware = CollectRequestResponseMiddleware()
 
-        downloader = AiohttpDownloader(
-            middlewares=[AiohttpAdapterMiddleware(), collect_middleware]
+        self.downloader = AiohttpDownloader(
+            middlewares=[AiohttpAdapterMiddleware(), self.collect_middleware]
         )
 
-        downloader.middlewares.insert(0, req_resp_midlleware)
+        self.downloader.middlewares.insert(0, self.req_resp_midlleware)
 
+    def test_asyncio_engine(self):
         pomp = AioPomp(
-            downloader=downloader,
+            downloader=self.downloader,
             pipelines=[],
         )
 
-        class Crawler(DummyCrawler):
-            ENTRY_REQUESTS = '/root'
-
         loop = asyncio.get_event_loop()
         loop.run_until_complete(pomp.pump(Crawler()))
-        loop.close()
 
         assert_set_equal(
             set([r.url.replace(self.httpd.location, '')
-                for r in collect_middleware.requests]),
+                for r in self.collect_middleware.requests]),
+            set(self.httpd.sitemap.keys())
+        )
+
+    def test_asyncio_concurrent_crawler(self):
+        pomp = AioPomp(
+            downloader=self.downloader,
+            pipelines=[],
+        )
+
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(pomp.pump(Crawler()))
+
+        loop.run_until_complete(pomp.pump(
+            AioConcurrentCrawler(
+                worker_class=Crawler,
+                pool_size=2,
+            )
+        ))
+
+        assert_set_equal(
+            set([r.url.replace(self.httpd.location, '')
+                for r in self.collect_middleware.requests]),
             set(self.httpd.sitemap.keys())
         )

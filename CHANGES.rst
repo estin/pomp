@@ -8,6 +8,7 @@ Version 0.2.0
 
 Not released yet
 
+- AioConcurrentCrawler with asyncio and concurrent futures support
 - pomp.core.item moved to pomp.contrib.item without backward
   compatibility https://github.com/estin/pomp/issues/6#issuecomment-172342598
 - AioPomp with asyncio support

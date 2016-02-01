@@ -90,7 +90,7 @@ class CsvPipeline(BasePipeline):
             )
 
     def process(self, crawler, item):
-        self.writer.writerow(list(item.values()))
+        self.writer.writerow(item.values())
         return item
 
     def stop(self, crawler):

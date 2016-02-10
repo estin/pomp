@@ -1,7 +1,7 @@
 import json
 import logging
 
-from pomp.core.base import BaseCrawler, BaseDownloaderMiddleware, BasePipeline
+from pomp.core.base import BaseCrawler, BaseMiddleware, BasePipeline
 from pomp.core.base import BaseHttpRequest, BaseHttpResponse
 from pomp.core.base import BaseDownloader
 from pomp.contrib.item import Item, Field
@@ -40,20 +40,20 @@ class DummyDownloader(BaseDownloader):
             yield response
 
 
-class RequestResponseMiddleware(BaseDownloaderMiddleware):
+class RequestResponseMiddleware(BaseMiddleware):
 
     def __init__(self, request_factory, prefix_url=None, bodyjson=True):
         self.bodyjson = bodyjson
         self.prefix_url = prefix_url
         self.request_factory = request_factory
 
-    def process_request(self, request):
+    def process_request(self, request, crawler, downloader):
         url = request.url if isinstance(request, BaseHttpRequest) else request
         url = '%s%s' % (self.prefix_url, url) \
             if self.prefix_url else url
         return self.request_factory(url)
 
-    def process_response(self, response):
+    def process_response(self, response, crawler, downloader):
         if self.bodyjson:
             if isinstance(response.body, str):
                 response.body = json.loads(response.body)
@@ -62,22 +62,22 @@ class RequestResponseMiddleware(BaseDownloaderMiddleware):
         return response
 
 
-class CollectRequestResponseMiddleware(BaseDownloaderMiddleware):
+class CollectRequestResponseMiddleware(BaseMiddleware):
 
     def __init__(self, prefix_url=None):
         self.requests = []
         self.responses = []
         self.exceptions = []
 
-    def process_request(self, request):
+    def process_request(self, request, crawler, downloader):
         self.requests.append(request)
         return request
 
-    def process_response(self, response):
+    def process_response(self, response, crawler, downloader):
         self.responses.append(response)
         return response
 
-    def process_exception(self, exception):
+    def process_exception(self, exception, crawler, downloader):
         self.exceptions.append(exception)
         return exception
 

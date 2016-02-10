@@ -8,6 +8,12 @@ Version 0.2.0
 
 Not released yet
 
+- middlewares logic moved to engine and
+  BaseMiddleware.process_(request|response|exception) with
+  crawler and downloader params
+- Downloader does not have any more middlewares param
+- BaseDownloaderMiddleware renamed to BaseMiddleware
+- BaseDownloderException renamed to BaseCrawlException
 - AioConcurrentCrawler with asyncio and concurrent futures support
 - pomp.core.item moved to pomp.contrib.item without backward
   compatibility https://github.com/estin/pomp/issues/6#issuecomment-172342598

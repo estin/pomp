@@ -93,12 +93,11 @@ class TestContribConcurrent(object):
             pool_size=5,
             worker_class=MockedDownloadWorker,
             worker_kwargs=None,
-            middlewares=(collect_middleware,)
         )
-        downloader.middlewares.insert(0, req_resp_midlleware)
 
         pomp = Pomp(
             downloader=downloader,
+            middlewares=(req_resp_midlleware, collect_middleware, ),
             pipelines=[],
         )
 
@@ -125,12 +124,11 @@ class TestContribConcurrent(object):
             pool_size=5,
             worker_class=MockedDownloadWorkerWithException,
             worker_kwargs=None,
-            middlewares=(collect_middleware,)
         )
-        downloader.middlewares.insert(0, req_resp_midlleware)
 
         pomp = Pomp(
             downloader=downloader,
+            middlewares=(req_resp_midlleware, collect_middleware, ),
             pipelines=[],
         )
 
@@ -150,14 +148,15 @@ class TestContribConcurrent(object):
 
         collect_middleware = CollectRequestResponseMiddleware()
 
-        downloader = ConcurrentUrllibDownloader(
-            middlewares=[UrllibAdapterMiddleware(), collect_middleware]
-        )
-
-        downloader.middlewares.insert(0, req_resp_midlleware)
+        downloader = ConcurrentUrllibDownloader()
 
         pomp = Pomp(
             downloader=downloader,
+            middlewares=(
+                req_resp_midlleware,
+                UrllibAdapterMiddleware(),
+                collect_middleware,
+            ),
             pipelines=[],
         )
 
@@ -182,13 +181,15 @@ class TestContribConcurrent(object):
 
         downloader = ConcurrentUrllibDownloader(
             pool_size=2,
-            middlewares=[UrllibAdapterMiddleware(), collect_middleware]
         )
-
-        downloader.middlewares.insert(0, req_resp_midlleware)
 
         pomp = Pomp(
             downloader=downloader,
+            middlewares=(
+                req_resp_midlleware,
+                UrllibAdapterMiddleware(),
+                collect_middleware,
+            ),
             pipelines=[],
         )
 
@@ -213,13 +214,15 @@ class TestContribConcurrent(object):
 
         downloader = ConcurrentUrllibDownloader(
             pool_size=2,
-            middlewares=[UrllibAdapterMiddleware(), collect_middleware]
         )
-
-        downloader.middlewares.insert(0, req_resp_midlleware)
 
         pomp = Pomp(
             downloader=downloader,
+            middlewares=(
+                req_resp_midlleware,
+                UrllibAdapterMiddleware(),
+                collect_middleware,
+            ),
             pipelines=[],
         )
 

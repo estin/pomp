@@ -1,6 +1,6 @@
 import logging
 from nose.tools import assert_equal
-from pomp.core.base import BaseDownloaderMiddleware
+from pomp.core.base import BaseMiddleware
 
 from pomp.core.engine import Pomp
 
@@ -14,37 +14,37 @@ class Crawler(DummyCrawler):
     ENTRY_REQUESTS = '/'
 
 
-class RaiseOnRequestMiddleware(BaseDownloaderMiddleware):
-    def process_request(self, request):
+class RaiseOnRequestMiddleware(BaseMiddleware):
+    def process_request(self, request, crawler, downloader):
         raise Exception('Some exception on Request')
 
 
-class RaiseOnResponseMiddleware(BaseDownloaderMiddleware):
-    def process_response(self, response):
+class RaiseOnResponseMiddleware(BaseMiddleware):
+    def process_response(self, response, crawler, downloader):
         raise Exception('Some exception on Response')
 
 
-class RaiseOnExceptionMiddleware(BaseDownloaderMiddleware):
-    def process_exception(self, exception):
+class RaiseOnExceptionMiddleware(BaseMiddleware):
+    def process_exception(self, exception, crawler, downloader):
         raise Exception('Some exception on Exception processing')
 
 
-class CollectRequestResponseMiddleware(BaseDownloaderMiddleware):
+class CollectRequestResponseMiddleware(BaseMiddleware):
 
     def __init__(self, prefix_url=None):
         self.requests = []
         self.responses = []
         self.exceptions = []
 
-    def process_request(self, request):
+    def process_request(self, request, crawler, downloader):
         self.requests.append(request)
         return request
 
-    def process_response(self, response):
+    def process_response(self, response, crawler, downloader):
         self.responses.append(response)
         return response
 
-    def process_exception(self, exception):
+    def process_exception(self, exception, crawler, downloader):
         self.exceptions.append(exception)
         return exception
 
@@ -53,10 +53,11 @@ def test_exception_on_processing_request():
 
     collect_middleware = CollectRequestResponseMiddleware()
     pomp = Pomp(
-        downloader=DummyDownloader(middlewares=[
+        downloader=DummyDownloader(),
+        middlewares=(
             RaiseOnRequestMiddleware(),
             collect_middleware,
-        ]),
+        ),
     )
 
     pomp.pump(Crawler())
@@ -70,10 +71,11 @@ def test_exception_on_processing_response():
 
     collect_middleware = CollectRequestResponseMiddleware()
     pomp = Pomp(
-        downloader=DummyDownloader(middlewares=[
+        downloader=DummyDownloader(),
+        middlewares=(
             RaiseOnResponseMiddleware(),
             collect_middleware,
-        ]),
+        ),
     )
 
     pomp.pump(Crawler())
@@ -91,9 +93,10 @@ def test_exception_on_processing_response_callback():
 
     collect_middleware = CollectRequestResponseMiddleware()
     pomp = Pomp(
-        downloader=DummyDownloader(middlewares=[
+        downloader=DummyDownloader(),
+        middlewares=(
             collect_middleware,
-        ]),
+        )
     )
 
     pomp.pump(CrawlerWithException())
@@ -107,15 +110,17 @@ def test_exception_on_processing_exception():
 
     collect_middleware = CollectRequestResponseMiddleware()
     pomp = Pomp(
-        downloader=DummyDownloader(middlewares=[
+        downloader=DummyDownloader(),
+        middlewares=(
             RaiseOnRequestMiddleware(),
             RaiseOnExceptionMiddleware(),
             collect_middleware,
-        ]),
+        ),
     )
 
     pomp.pump(Crawler())
 
-    assert_equal(len(collect_middleware.exceptions), 1)
+    # one exception on request middleware plus one on exception processing
+    assert_equal(len(collect_middleware.exceptions), 1 + 1)
     assert_equal(len(collect_middleware.requests), 0)
     assert_equal(len(collect_middleware.responses), 0)

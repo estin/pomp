@@ -10,7 +10,7 @@ Pomp is fun to use, incredibly easy for basic applications.
 A Minimal Application
 ---------------------
 
-For a minimal application all you need is to define you crawler 
+For a minimal application all you need is to define you crawler
 by inherit :class:`base.BaseCrawler`
 
 
@@ -25,7 +25,7 @@ For processing extracted items pomp has pipelines mechanism.
 Define pipe by subclass of :class:`base.BasePipeline` and pass
 it to :class:`engine.Pomp` constructor.
 
-Pipe calls one by one 
+Pipe calls one by one
 
 Example pipelines for filtering items with length less the 10 symbols and
 printing sentence::
@@ -67,7 +67,7 @@ Downloader middleware
 For hook request before it executed by downloader or response before it
 passed to crawler in pomp exists middlewares framework.
 
-Middleware must be subclass of :class:`base.BaseDownloaderMiddleware`.
+Middleware must be subclass of :class:`base.BaseMiddleware`.
 
 
 Each request will be passed to middlewares one by one in order it will passed to
@@ -77,21 +77,21 @@ reverse order.
 
 For example statistic middleware::
 
-    from pomp.core.base import BaseDownloaderMiddleware
+    from pomp.core.base import BaseMiddleware
 
-    class StatisticMiddleware(BaseDownloaderMiddleware):
+    class StatisticMiddleware(BaseMiddleware):
         def __init__(self):
             self.requests = self.responses = self.exceptions = 0
 
-        def process_request(self, request):
+        def process_request(self, request, crawler, downloader):
             self.requests += 1
             return request
 
-        def process_response(self, response):
+        def process_response(self, response, crawler, downloader):
             self.responses += 1
             return response
 
-        def process_exception(self, exception):
+        def process_exception(self, exception, crawler, downloader):
             self.exceptions += 1
             return exception
 

@@ -37,6 +37,7 @@ class PhantomRequest(BaseHttpRequest):
     def __init__(self, url, level=None):
         self.url = url
         self.level = level or 0
+        self.driver_url = None
 
     def __str__(self):
         return '<{s.__class__.__name__} level:{s.level} url:{s.url} ' \
@@ -104,13 +105,17 @@ class PhantomDownloader(ConcurrentDownloader):
         ])
 
     def get(self, requests):
+
         # associate each request with phantomjs node
-        for request in requests:
+        def _associate_driver_url(request):
             request.driver_url = self.drivers[0].command_executor._url
             log.debug("Associated request %s", request)
             self.drivers.rotate(1)
+            return request
 
-        return super(PhantomDownloader, self).get(requests)
+        return super(PhantomDownloader, self).get(
+            map(_associate_driver_url, requests)
+        )
 
     def stop(self):
         super(PhantomDownloader, self).stop()
@@ -191,10 +196,10 @@ if __name__ == '__main__':
         downloader=PhantomDownloader(
             pool_size=2,
             worker_class=PhantomDownloadWorker,
-            middlewares=(
-                statistics,
-                LXMLDownloaderMiddleware(),
-            ),
+        ),
+        middlewares=(
+            statistics,
+            LXMLDownloaderMiddleware(),
         ),
         pipelines=[PrintPipeline()],
     )

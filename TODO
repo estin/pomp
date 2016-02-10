@@ -1,3 +1,6 @@
+ * cleanup not used stuff from `Planned`
+ * try to standardize `BaseHttpRequest` and `BaseHttpResponse` interfaces
+ * [asyncio] `BasePipeline.process` can be coroutine
+ * [asyncio] `BaseMiddleware.process_(request|response|exception)` can be coroutine
  * downloader middlewares can return more than one request/response
  * pickle traceback from downloader worker
- * concurrent Crawler.extract_items

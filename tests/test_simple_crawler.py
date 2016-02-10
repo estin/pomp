@@ -62,7 +62,8 @@ class TestSimplerCrawler(object):
         road = RoadPipeline()
 
         pomp = Pomp(
-            downloader=DummyDownloader(middlewares=[url_to_request_middl]),
+            downloader=DummyDownloader(),
+            middlewares=[url_to_request_middl],
             pipelines=[
                 road,
             ],
@@ -83,7 +84,8 @@ class TestSimplerCrawler(object):
         road.reset()
 
         pomp = Pomp(
-            downloader=DummyDownloader(middlewares=[url_to_request_middl]),
+            downloader=DummyDownloader(),
+            middlewares=[url_to_request_middl],
             pipelines=[
                 road,
             ],
@@ -125,7 +127,8 @@ class TestSimplerCrawler(object):
         result = []
 
         pomp = Pomp(
-            downloader=DummyDownloader(middlewares=[url_to_request_middl]),
+            downloader=DummyDownloader(),
+            middlewares=[url_to_request_middl],
             pipelines=[
                 IncPipeline(),
                 FilterPipeline(),
@@ -160,7 +163,8 @@ class TestSimplerCrawler(object):
         queue = SimpleQueue()
 
         pomp = Pomp(
-            downloader=DummyDownloader(middlewares=[url_to_request_middl]),
+            downloader=DummyDownloader(),
+            middlewares=[url_to_request_middl],
             pipelines=[
                 road,
             ],
@@ -187,7 +191,8 @@ class TestSimplerCrawler(object):
                 pass
 
         pomp = Pomp(
-            downloader=DummyDownloader(middlewares=[url_to_request_middl]),
+            downloader=DummyDownloader(),
+            middlewares=[url_to_request_middl],
         )
         pomp.pump(CrawlerWithoutItems())
 
@@ -199,7 +204,8 @@ class TestSimplerCrawler(object):
 
         road = RoadPipeline()
         pomp = Pomp(
-            downloader=DummyDownloader(middlewares=[url_to_request_middl]),
+            downloader=DummyDownloader(),
+            middlewares=[url_to_request_middl],
             pipelines=[
                 road,
             ],

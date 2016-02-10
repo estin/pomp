@@ -21,7 +21,7 @@ from lxml import html
 
 from pomp.core.base import BaseCrawler
 from pomp.contrib.pipelines import CsvPipeline
-from pomp.core.base import BasePipeline, BaseDownloaderMiddleware
+from pomp.core.base import BasePipeline, BaseMiddleware
 from pomp.contrib.item import Item, Field
 from pomp.contrib.urllibtools import UrllibHttpRequest
 
@@ -29,19 +29,19 @@ from pomp.contrib.urllibtools import UrllibHttpRequest
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
 
-class StatisticMiddleware(BaseDownloaderMiddleware):
+class StatisticMiddleware(BaseMiddleware):
     def __init__(self):
         self.requests = self.responses = self.exceptions = 0
 
-    def process_request(self, request):
+    def process_request(self, request, crawler, downloader):
         self.requests += 1
         return request
 
-    def process_response(self, response):
+    def process_response(self, response, crawler, downloader):
         self.responses += 1
         return response
 
-    def process_exception(self, exception):
+    def process_exception(self, exception, crawler, downloader):
         self.exceptions += 1
         return exception
 
@@ -51,15 +51,12 @@ class StatisticMiddleware(BaseDownloaderMiddleware):
             .format(s=self)
 
 
-class LXMLDownloaderMiddleware(BaseDownloaderMiddleware):
+class LXMLDownloaderMiddleware(BaseMiddleware):
 
     def __init__(self, encoding=None):
         self.encoding = encoding
 
-    def process_request(self, request):
-        return request
-
-    def process_response(self, response):
+    def process_response(self, response, crawler, downloader):
         if self.encoding:
             response.tree = html.fromstring(
                 response.body.decode(self.encoding)
@@ -139,8 +136,8 @@ if __name__ == '__main__':
     pomp = Pomp(
         downloader=ConcurrentUrllibDownloader(
             pool_size=3,
-            middlewares=middlewares,
         ),
+        middlewares=middlewares,
         pipelines=[
             PrintPipeline(),
             CsvPipeline(filepath, delimiter=';', quotechar='"'),

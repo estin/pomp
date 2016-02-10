@@ -1,6 +1,6 @@
 import logging
 from nose.tools import assert_set_equal, assert_equal
-from pomp.core.base import BaseCrawler, BaseDownloaderMiddleware
+from pomp.core.base import BaseCrawler, BaseMiddleware
 from pomp.core.engine import Pomp
 from pomp.contrib.urllibtools import UrllibDownloader
 from pomp.contrib.urllibtools import UrllibAdapterMiddleware
@@ -32,14 +32,15 @@ class TestContribUrllib(object):
 
         collect_middleware = CollectRequestResponseMiddleware()
 
-        downloader = UrllibDownloader(
-            middlewares=[UrllibAdapterMiddleware(), collect_middleware]
-        )
-
-        downloader.middlewares.insert(0, req_resp_midlleware)
+        downloader = UrllibDownloader()
 
         pomp = Pomp(
             downloader=downloader,
+            middlewares=(
+                req_resp_midlleware,
+                UrllibAdapterMiddleware(),
+                collect_middleware,
+            ),
             pipelines=[],
         )
 
@@ -56,12 +57,12 @@ class TestContribUrllib(object):
 
     def test_exception_handling(self):
 
-        class CatchException(BaseDownloaderMiddleware):
+        class CatchException(BaseMiddleware):
 
             def __init__(self):
                 self.exceptions = []
 
-            def process_exception(self, exception):
+            def process_exception(self, exception, crawler, downloader):
                 self.exceptions.append(exception)
                 return exception
 
@@ -74,11 +75,11 @@ class TestContribUrllib(object):
 
         catch_exception_middleware = CatchException()
         pomp = Pomp(
-            downloader=UrllibDownloader(
-                middlewares=[
-                    UrllibAdapterMiddleware(),
-                    catch_exception_middleware
-                ]),
+            downloader=UrllibDownloader(),
+            middlewares=(
+                UrllibAdapterMiddleware(),
+                catch_exception_middleware,
+            ),
             pipelines=[],
         )
 

@@ -9,8 +9,7 @@ except ImportError:
 import logging
 from nose.tools import assert_set_equal
 from pomp.core.base import (
-    BaseHttpRequest, BaseHttpResponse, BaseDownloader,
-    BaseDownloaderMiddleware,
+    BaseHttpRequest, BaseHttpResponse, BaseDownloader, BaseMiddleware,
 )
 from pomp.contrib.asynciotools import (
     ensure_future, AioPomp, AioConcurrentCrawler,
@@ -45,17 +44,17 @@ class AiohttpResponse(BaseHttpResponse):
         return self.req
 
 
-class AiohttpAdapterMiddleware(BaseDownloaderMiddleware):
-    """Middlerware for adapting urllib.Request
-    to :class:`pomp.core.base.BaseHttpRequest`
-    """
-
-    def process_request(self, req):
+class AiohttpAdapterMiddleware(BaseMiddleware):
+    def process_request(self, req, crawler, downloader):
+        log.debug(
+            "AiohttpAdapterMiddleware %s %s",
+            req, isinstance(req, BaseHttpRequest),
+        )
         if isinstance(req, BaseHttpRequest):
             return req
         return AiohttpRequest(req)
 
-    def process_response(self, response):
+    def process_response(self, response, crawler, downloader):
         return response
 
 
@@ -112,15 +111,18 @@ class TestContribAsyncio(object):
 
         self.collect_middleware = CollectRequestResponseMiddleware()
 
-        self.downloader = AiohttpDownloader(
-            middlewares=[AiohttpAdapterMiddleware(), self.collect_middleware]
-        )
+        self.downloader = AiohttpDownloader()
 
-        self.downloader.middlewares.insert(0, self.req_resp_midlleware)
+        self.middlewares = (
+            self.req_resp_midlleware,
+            AiohttpAdapterMiddleware(),
+            self.collect_middleware,
+        )
 
     def test_asyncio_engine(self):
         pomp = AioPomp(
             downloader=self.downloader,
+            middlewares=self.middlewares,
             pipelines=[],
         )
 
@@ -136,6 +138,7 @@ class TestContribAsyncio(object):
     def test_asyncio_concurrent_crawler(self):
         pomp = AioPomp(
             downloader=self.downloader,
+            middlewares=self.middlewares,
             pipelines=[],
         )
 

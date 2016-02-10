@@ -8,7 +8,7 @@ import itertools
 import threading
 
 from pomp.core.base import (
-    BaseEngine, BaseCommand, BaseQueue, BaseHttpRequest, BaseDownloadException,
+    BaseEngine, BaseCommand, BaseQueue, BaseHttpRequest, BaseCrawlException,
 )
 from pomp.core.utils import (
     iterator, isstring,  Planned,
@@ -50,6 +50,8 @@ class Pomp(BaseEngine):
     - Crawler
 
     :param downloader: :class:`pomp.core.base.BaseDownloader`
+    :param middlewares: list of middlewares, instances
+                        of :class:`BaseMiddleware`
     :param pipelines: list of item pipelines
                       :class:`pomp.core.base.BasePipeline`
     :param queue: external queue, instance of :class:`pomp.core.base.BaseQueue`
@@ -59,8 +61,14 @@ class Pomp(BaseEngine):
     DEFAULT_QUEUE_CLASS = SimpleQueue
 
     def __init__(
-            self, downloader, pipelines=None, queue=None, breadth_first=False):
+            self, downloader, middlewares=None, pipelines=None,
+            queue=None, breadth_first=False):
         self.downloader = downloader
+
+        self.middlewares = middlewares or []
+        if isinstance(self.middlewares, tuple):
+            self.middlewares = list(self.middlewares)
+
         self.pipelines = pipelines or tuple()
         self.queue = queue or self.DEFAULT_QUEUE_CLASS(
             use_lifo=not breadth_first
@@ -69,16 +77,17 @@ class Pomp(BaseEngine):
 
     def response_callback(self, crawler, response):
         try:
-            if not isinstance(response, BaseDownloadException):
+            if not isinstance(response, BaseCrawlException):
                 return self.on_response(crawler, response)
         except Exception as e:
             log.exception("On response processing")
-            self.downloader._process_exception(
-                BaseDownloadException(
+            self._exception_middlewares(
+                BaseCrawlException(
                     response,
                     exception=e,
                     exc_info=sys.exc_info(),
-                )
+                ),
+                crawler,
             )
 
     def on_parse_result(self, crawler, result, response):
@@ -87,12 +96,12 @@ class Pomp(BaseEngine):
             for items in result:
                 requests_from_items = itertools.chain(
                     requests_from_items,
-                    self._process_result(
+                    self._process_items(
                         crawler, iterator(items)
                     )
                 )
         else:
-            requests_from_items = self._process_result(
+            requests_from_items = self._process_items(
                 crawler, iterator(result)
             )
 
@@ -121,8 +130,8 @@ class Pomp(BaseEngine):
             def _(r):
                 result = r.result()
 
-                if isinstance(result, BaseDownloadException):
-                    self.downloader._process_exception(result)
+                if isinstance(result, BaseCrawlException):
+                    self._exception_middlewares(result, crawler)
                     planned.set_result(None)
                 else:
                     planned.set_result(
@@ -135,41 +144,47 @@ class Pomp(BaseEngine):
         else:
             return self.on_parse_result(crawler, result, response)
 
-    def _process_result(self, crawler, items):
-
-        for item in items:
-
-            if not item:
-                continue
-
-            # yield item as request
-            if isinstance(item, BaseHttpRequest) or isstring(item):
-                yield item
-            else:
-                # proccess item as data item by pipes
-                for pipe in self.pipelines:
-                    item = pipe.process(crawler, item)
-
-                    # item filtered - stop pipe processing
-                    if not item:
-                        break
-
     def process_requests(self, requests, crawler):
-        for response in self.downloader.process(requests, crawler):
-            if isinstance(response, Planned):
+
+        # execute requests by downloader
+        for response in self.downloader.process(
+                # process requests by middlewares
+                self._req_middlewares(requests, crawler), crawler):
+
+            if response is None:
+                # response was rejected by middlewares
+                pass
+
+            elif isinstance(response, Planned):  # async behaviour
                 def _(r):
+                    # put new requests to queue
                     self._put_requests(
-                        self.response_callback(crawler, r.result())
+                        # process response by crawler
+                        self.response_callback(
+                            crawler,
+                            # pass response to middlewares
+                            self._resp_middlewares(r.result(), crawler),
+                        )
                     )
                 response.add_done_callback(_)
-            else:
+
+            else:  # sync behavior
+                # put new requests to queue
                 self._put_requests(
+                    # process response by crawler
                     self.response_callback(
-                        crawler, response
+                        crawler,
+                        # pass response to middlewares
+                        self._resp_middlewares(response, crawler),
                     )
                 )
 
     def prepare(self, crawler):
+        # prepare middleware chain
+        self.request_middlewares = self.middlewares
+        self.response_middlewares = self.middlewares[:]
+        self.response_middlewares.reverse()
+
         log.info('Prepare downloader: %s', self.downloader)
         self.downloader.prepare()
         self.in_progress = 0
@@ -219,6 +234,123 @@ class Pomp(BaseEngine):
 
         self.finish(crawler)
 
+    def get_queue_semaphore(self):
+        workers_count = self.downloader.get_workers_count()
+        if workers_count > 1:
+            return threading.BoundedSemaphore(workers_count)
+
+    def _process_items(self, crawler, items):
+
+        for item in items:
+
+            if not item:
+                continue
+
+            # yield item as request
+            if isinstance(item, BaseHttpRequest) or isstring(item):
+                yield item
+            else:
+                # proccess item as data item by pipes
+                for pipe in self.pipelines:
+                    item = pipe.process(crawler, item)
+
+                    # item filtered - stop pipe processing
+                    if not item:
+                        log.debug(
+                            "Stop item processing. Pipeline %s on %s",
+                            pipe, item,
+                        )
+                        break
+
+    def _req_middlewares(self, requests, crawler):
+        # pass requests to middlewares
+        for request in requests:
+            for middleware in self.request_middlewares:
+                try:
+                    request = middleware.process_request(
+                        request,
+                        crawler,
+                        self.downloader,
+                    )
+                except Exception as e:
+                    log.exception(
+                        'Exception on process %s by %s', request, middleware)
+
+                    # yield exception instance instead of request
+                    # do not break request-response processing logic
+                    yield BaseCrawlException(
+                        request=request,
+                        response=None,
+                        exception=e,
+                        exc_info=sys.exc_info(),
+                    )
+
+                    # mark to stop request processing
+                    request = None
+
+                # stop middleware chain
+                if not request:
+                    log.debug(
+                        "Stop request processing. Middleware %s on %s",
+                        middleware, request,
+                    )
+                    break
+
+            if request:
+                yield request
+
+    def _resp_middlewares(self, response, crawler):
+        # pass response to middlewares
+        is_error = isinstance(response, BaseCrawlException)
+        func = 'process_response' if not is_error else 'process_exception'
+
+        for middleware in self.response_middlewares:
+            try:
+                value = getattr(middleware, func)(
+                    response, crawler, self.downloader,
+                )
+            except Exception as e:
+                log.exception(
+                    'Exception on process %s by %s', response, middleware)
+                response = self._exception_middlewares(
+                    BaseCrawlException(
+                        request=response.request,
+                        response=response,
+                        exception=e,
+                        exc_info=sys.exc_info(),
+                    ),
+                    crawler,
+                )
+                value = None  # stop processing response by middlewares
+            if not value:
+                log.debug(
+                    "Stop response processing. Middleware %s on %s",
+                    middleware, response,
+                )
+                break
+            response = value
+
+        return response
+
+    def _exception_middlewares(self, exception, crawler):
+        value = None
+        for middleware in self.response_middlewares:
+            try:
+                value = middleware.process_exception(
+                    exception, crawler, self.downloader,
+                )
+                if value is None:  # stop processing exception
+                    log.debug(
+                        "Stop exception processing. Middleware %s on %s",
+                        middleware, value,
+                    )
+                    break
+            except Exception:
+                log.exception(
+                    'Exception on process %s by %s', exception, middleware
+                )
+        return value
+
     def _put_requests(self, requests, request_done=True):
 
         def _put(items):
@@ -244,8 +376,3 @@ class Pomp(BaseEngine):
         if self.in_progress == 0:
             # work done
             self.queue.put_requests(StopCommand())
-
-    def get_queue_semaphore(self):
-        workers_count = self.downloader.get_workers_count()
-        if workers_count > 1:
-            return threading.BoundedSemaphore(workers_count)

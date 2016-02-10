@@ -10,7 +10,7 @@ from functools import partial
 from concurrent.futures import ProcessPoolExecutor
 
 from pomp.core.base import (
-    BaseCrawler, BaseDownloader, BaseDownloadException,
+    BaseCrawler, BaseDownloader, BaseCrawlException,
 )
 from pomp.contrib.urllibtools import UrllibDownloadWorker
 from pomp.core.utils import iterator, Planned
@@ -68,7 +68,7 @@ class ConcurrentMixin(object):
             response = future.result()
         except Exception as e:
             log.exception('Exception on %s', request)
-            done_future.set_result(BaseDownloadException(
+            done_future.set_result(BaseCrawlException(
                 request,
                 exception=e,
                 exc_info=sys.exc_info(),
@@ -85,7 +85,7 @@ class ConcurrentDownloader(BaseDownloader, ConcurrentMixin):
     """
     def __init__(
             self, worker_class,
-            worker_kwargs=None, pool_size=5, middlewares=None,):
+            worker_kwargs=None, pool_size=5,):
 
         # configure executor
         self.pool_size = pool_size
@@ -101,13 +101,13 @@ class ConcurrentDownloader(BaseDownloader, ConcurrentMixin):
         # trap sigint
         signal.signal(signal.SIGINT, lambda s, f: s)
 
-        super(ConcurrentDownloader, self).__init__(
-            middlewares=middlewares
-        )
+        super(ConcurrentDownloader, self).__init__()
 
     def get(self, requests):
 
+        requests = list(requests)
         for request in requests:
+
             # delegate request processing to the executor
             future = self.executor.submit(
                 _run_download_worker, self.worker_params, request,
@@ -137,14 +137,13 @@ class ConcurrentUrllibDownloader(ConcurrentDownloader):
     :param pool_size: pool size of ProcessPoolExecutor
     :param timeout: request timeout in seconds
     """
-    def __init__(self, pool_size=5, timeout=5, middlewares=None,):
+    def __init__(self, pool_size=5, timeout=5):
         super(ConcurrentUrllibDownloader, self).__init__(
             pool_size=pool_size,
             worker_class=UrllibDownloadWorker,
             worker_kwargs={
                 'timeout': timeout
             },
-            middlewares=middlewares,
         )
 
 

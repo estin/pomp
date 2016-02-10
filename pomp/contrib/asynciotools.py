@@ -73,14 +73,29 @@ class AioPomp(SyncPomp):
 
     @asyncio.coroutine
     def process_requests(self, requests, crawler):
-        for response in self.downloader.process(requests, crawler):
-            if isinstance(response, Planned):
+
+        # execute requests by downloader
+        for response in self.downloader.process(
+                # process requests by middlewares
+                self._req_middlewares(requests, crawler), crawler):
+
+            if response is None:
+                # response was rejected by middlewares
+                pass
+
+            elif isinstance(response, Planned):
                 future = asyncio.Future()
 
                 def _(r):
                     ensure_future(
+                        # put new requests to queue
                         self._put_requests(
-                            self.response_callback(crawler, r.result())
+                            # process response by crawler
+                            self.response_callback(
+                                crawler,
+                                # pass response to middlewares
+                                self._resp_middlewares(r.result(), crawler),
+                            )
                         )
                     ).add_done_callback(
                         future.set_result
@@ -90,9 +105,13 @@ class AioPomp(SyncPomp):
 
                 yield from future
             else:
+                # put new requests to queue
                 yield from self._put_requests(
+                    # process response by crawler
                     self.response_callback(
-                        crawler, response
+                        crawler,
+                        # pass response to middlewares
+                        self._resp_middlewares(response, crawler),
                     )
                 )
 

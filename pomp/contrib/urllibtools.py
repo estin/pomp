@@ -14,8 +14,8 @@ import logging
 
 from pomp.core.base import (
     BaseDownloadWorker, BaseDownloader,
-    BaseHttpRequest, BaseHttpResponse, BaseDownloaderMiddleware,
-    BaseDownloadException,
+    BaseHttpRequest, BaseHttpResponse, BaseMiddleware,
+    BaseCrawlException,
 )
 from pomp.core.utils import iterator
 
@@ -35,7 +35,7 @@ class UrllibDownloadWorker(BaseDownloadWorker):
             return UrllibHttpResponse(request, res)
         except Exception as e:
             log.exception('Exception on %s', request)
-            return BaseDownloadException(
+            return BaseCrawlException(
                 request,
                 exception=e,
                 exc_info=sys.exc_info(),
@@ -49,8 +49,8 @@ class UrllibDownloader(BaseDownloader):
     """
     WORKER_CLASS = UrllibDownloadWorker
 
-    def __init__(self, middlewares=None, timeout=5):
-        super(UrllibDownloader, self).__init__(middlewares=middlewares)
+    def __init__(self, timeout=5):
+        super(UrllibDownloader, self).__init__()
         self.worker = UrllibDownloadWorker(timeout=timeout)
 
     def get(self, requests):
@@ -87,14 +87,14 @@ class UrllibHttpResponse(BaseHttpResponse):
         return '<UrllibHttpResponse on {s.request}>'.format(s=self)
 
 
-class UrllibAdapterMiddleware(BaseDownloaderMiddleware):
+class UrllibAdapterMiddleware(BaseMiddleware):
     """Middlerware for adapting urllib.Request
     to :class:`pomp.core.base.BaseHttpRequest`
     """
 
-    def process_request(self, req):
+    def process_request(self, req, crawler, downloader):
         return req if isinstance(req, BaseHttpRequest) \
             else UrllibHttpRequest(req)
 
-    def process_response(self, response):
+    def process_response(self, response, crawler, downloader):
         return response

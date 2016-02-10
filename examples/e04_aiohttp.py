@@ -82,11 +82,10 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     statistics = StatisticMiddleware()
     pomp = AioPomp(
-        downloader=AiohttpDownloader(
-            middlewares=(
-                statistics,
-                LXMLDownloaderMiddleware(),
-            ),
+        downloader=AiohttpDownloader(),
+        middlewares=(
+            statistics,
+            LXMLDownloaderMiddleware(),
         ),
         pipelines=[PrintPipeline()],
     )

@@ -1,5 +1,5 @@
 import requests as requestslib
-from pomp.core.base import BaseDownloader, BaseDownloadException
+from pomp.core.base import BaseDownloader, BaseCrawlException
 from pomp.core.base import BaseHttpRequest, BaseHttpResponse
 
 from pomp.core.utils import iterator
@@ -37,7 +37,7 @@ class RequestsDownloader(BaseDownloader):
             return ReqResponse(request, res)
         except Exception as e:
             print('Exception on %s: %s', request, e)
-            return BaseDownloadException(request, exception=e)
+            return BaseCrawlException(request, exception=e)
 
 
 if __name__ == '__main__':

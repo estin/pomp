@@ -63,12 +63,11 @@ class AioPomp(SyncPomp):
             next_requests = yield from self.queue.get_requests()
 
             if isinstance(next_requests, StopCommand):
-                self.stop = True
                 break
-            else:
-                yield from self.process_requests(
-                    iterator(next_requests), crawler,
-                )
+
+            yield from self.process_requests(
+                iterator(next_requests), crawler,
+            )
         self.finish(crawler)
 
     @asyncio.coroutine
@@ -151,7 +150,9 @@ class AioPomp(SyncPomp):
             self.queue_semaphore.release()
 
         self.in_progress -= 1
-        if self.in_progress == 0:
+
+        # send StopCommand if all jobs are done and running on internal queue
+        if self._is_internal_queue and self.in_progress == 0:
             # work done
             yield from self.queue.put_requests(StopCommand())
 

@@ -160,16 +160,16 @@ class TestSimplerCrawler(object):
             def put_requests(self, request):
                 self.requests.append(request)
 
-        queue = SimpleQueue()
-
         pomp = Pomp(
             downloader=DummyDownloader(),
             middlewares=[url_to_request_middl],
             pipelines=[
                 road,
             ],
-            queue=queue,
         )
+
+        # override internal queue with own
+        pomp.queue = SimpleQueue()
 
         pomp.pump(Crawler())
 

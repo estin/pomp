@@ -74,6 +74,9 @@ class Pomp(BaseEngine):
             use_lifo=not breadth_first
         )
         self.queue_semaphore = None
+        self._is_internal_queue = isinstance(
+            self.queue, self.DEFAULT_QUEUE_CLASS,
+        )
 
     def response_callback(self, crawler, response):
         try:
@@ -226,8 +229,10 @@ class Pomp(BaseEngine):
                 self.queue_semaphore.acquire(blocking=True)
 
             next_requests = self.queue.get_requests()
+
             if isinstance(next_requests, StopCommand):
                 break
+
             self.process_requests(
                 iterator(next_requests), crawler,
             )
@@ -373,6 +378,8 @@ class Pomp(BaseEngine):
             self.queue_semaphore.release()
 
         self.in_progress -= 1
-        if self.in_progress == 0:
+
+        # send StopCommand if all jobs are done and running on internal queue
+        if self._is_internal_queue and self.in_progress == 0:
             # work done
             self.queue.put_requests(StopCommand())

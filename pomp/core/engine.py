@@ -86,7 +86,8 @@ class Pomp(BaseEngine):
             log.exception("On response processing")
             self._exception_middlewares(
                 BaseCrawlException(
-                    response,
+                    request=response.request,
+                    response=response,
                     exception=e,
                     exc_info=sys.exc_info(),
                 ),

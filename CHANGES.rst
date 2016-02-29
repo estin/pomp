@@ -6,7 +6,7 @@ Here you can see the full list of changes between pomp releases.
 Version 0.2.0
 -------------
 
-Not released yet
+Released at 2016-03-01
 
 - middlewares logic moved to engine and
   BaseMiddleware.process_(request|response|exception) with

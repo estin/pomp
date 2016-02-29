@@ -259,14 +259,29 @@ class BaseCrawlException(Exception):  # pragma: no cover
     :param exc_info: result of `sys.exc_info` call
     """
 
-    def __init__(self, request, response=None, exception=None, exc_info=None):
+    def __init__(
+            self, request=None, response=None, exception=None, exc_info=None):
         self.request = request
         self.response = response
         self.exception = exception
         self.exc_info = exc_info
 
+    def __reduce__(self):
+        return (
+            BaseCrawlException,
+            (),
+            {
+                'request': self.request,
+                'response': self.response,
+                'exception': self.exception,
+                'exc_info': None,  # do not serialize traceback
+            },
+        )
+
     def __str__(self):
-        return 'Exception on %s - %s' % (self.request, self.exception)
+        return 'Exception on response: %s request: %s - %s' % (
+            self.response, self.request, self.exception
+        )
 
 
 class BaseEngine(object):  # pragma: no cover

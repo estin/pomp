@@ -137,7 +137,7 @@ class ConcurrentUrllibDownloader(ConcurrentDownloader):
     :param pool_size: pool size of ProcessPoolExecutor
     :param timeout: request timeout in seconds
     """
-    def __init__(self, pool_size=5, timeout=5):
+    def __init__(self, pool_size=5, timeout=None):
         super(ConcurrentUrllibDownloader, self).__init__(
             pool_size=pool_size,
             worker_class=UrllibDownloadWorker,

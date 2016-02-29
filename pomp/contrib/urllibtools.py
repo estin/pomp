@@ -25,8 +25,8 @@ log = logging.getLogger('pomp.contrib.urllib')
 
 class UrllibDownloadWorker(BaseDownloadWorker):
 
-    def __init__(self, timeout=5):
-        self.timeout = timeout
+    def __init__(self, timeout=None):
+        self.timeout = None
 
     def get_one(self, request):
         try:
@@ -49,7 +49,7 @@ class UrllibDownloader(BaseDownloader):
     """
     WORKER_CLASS = UrllibDownloadWorker
 
-    def __init__(self, timeout=5):
+    def __init__(self, timeout=None):
         super(UrllibDownloader, self).__init__()
         self.worker = UrllibDownloadWorker(timeout=timeout)
 

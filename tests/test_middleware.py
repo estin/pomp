@@ -1,7 +1,9 @@
+import sys
+import pickle
 import logging
-from nose.tools import assert_equal
-from pomp.core.base import BaseMiddleware
+from nose.tools import assert_equal, assert_false
 
+from pomp.core.base import BaseMiddleware, BaseCrawlException
 from pomp.core.engine import Pomp
 
 from tools import DummyDownloader, DummyCrawler
@@ -124,3 +126,17 @@ def test_exception_on_processing_exception():
     assert_equal(len(collect_middleware.exceptions), 1 + 1)
     assert_equal(len(collect_middleware.requests), 0)
     assert_equal(len(collect_middleware.responses), 0)
+
+
+def test_exception_pickling():
+    try:
+        raise RuntimeError('some exception')
+    except Exception as e:
+        exception = BaseCrawlException(
+            request=None,
+            response=None,
+            exception=e,
+            exc_info=sys.exc_info(),
+        )
+        exception = pickle.loads(pickle.dumps(exception))
+        assert_false(exception.exc_info)

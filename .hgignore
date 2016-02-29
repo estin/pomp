@@ -10,5 +10,8 @@ docs/_build/
 build/
 *.csv
 .coverage
+.coverage.*
 .coveralls.yml
 ctags
+.python-version
+*.log

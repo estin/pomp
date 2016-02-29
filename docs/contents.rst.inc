@@ -7,6 +7,7 @@ This part of the documentation will show you how to get started in using Pomp.
    :maxdepth: 2
 
    quickstart
+   architecture
 
 
 API Reference

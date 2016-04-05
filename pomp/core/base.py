@@ -61,17 +61,28 @@ class BaseCrawler(object):  # pragma: no cover
         """
         raise NotImplementedError()
 
+    def on_processing_done(self, response):
+        """Called when request/response was fully processed by middlewares,
+        this crawler and and pipelines.
+
+        :param response: the instance of :class:`BaseHttpResponse`
+        """
+        pass
+
 
 class BaseQueue(object):  # pragma: no cover
     """Blocking queue interface"""
 
-    def get_requests(self):
+    def get_requests(self, count=None):
         """Get from queue
 
         .. note::
 
             must block execution until item is available
 
+        :param count: count of requests to be processed by downloader
+                      in concurrent mode, None - downloader have not
+                      concurrency (workers). This param can be ignored.
         :rtype: instance of :class:`BaseRequest` or :class:`.Planned`
                 or list of them
         """

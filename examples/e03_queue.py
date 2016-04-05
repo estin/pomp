@@ -40,7 +40,7 @@ class WrappedQueue(BaseQueue):
         self.stop_event = stop_event
         log.debug('Queue INITED <%s> on worker: %s', self, self.pid)
 
-    def get_requests(self):
+    def get_requests(self, count=None):
         while True:
             try:
                 res = self.source_queue.get(block=False)

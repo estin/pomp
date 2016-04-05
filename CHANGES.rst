@@ -3,6 +3,16 @@ pomp changelog
 
 Here you can see the full list of changes between pomp releases.
 
+Version 0.2.1
+-------------
+
+Not yet released
+
+- `BaseCrawler.on_processing_done` when request, middlewares, response,
+  extract, pipelines processing was done
+- count param for `BaseQueue.get_requests` - number allowed concurrent
+  requests for current downloader, may be None
+
 Version 0.2.0
 -------------
 

@@ -6,14 +6,20 @@ from nose.tools import assert_equal, assert_false
 from pomp.core.base import BaseMiddleware, BaseCrawlException
 from pomp.core.engine import Pomp
 
-from tools import DummyDownloader, DummyCrawler
+from tools import (
+    DummyDownloader, DummyCrawler, DummyRequest, RequestResponseMiddleware,
+)
 
 
 logging.basicConfig(level=logging.DEBUG)
+log = logging.getLogger(__name__)
 
 
 class Crawler(DummyCrawler):
     ENTRY_REQUESTS = '/'
+
+    def next_requests(self, response):
+        pass
 
 
 class RaiseOnRequestMiddleware(BaseMiddleware):
@@ -29,6 +35,13 @@ class RaiseOnResponseMiddleware(BaseMiddleware):
 class RaiseOnExceptionMiddleware(BaseMiddleware):
     def process_exception(self, exception, crawler, downloader):
         raise Exception('Some exception on Exception processing')
+
+
+class RaiseOnProcessingDoneCralwer(Crawler):
+
+    def on_processing_done(self, response):
+        log.debug("call on_processing_done")
+        raise Exception('Some exception on processing done callback')
 
 
 class CollectRequestResponseMiddleware(BaseMiddleware):
@@ -140,3 +153,25 @@ def test_exception_pickling():
         )
         exception = pickle.loads(pickle.dumps(exception))
         assert_false(exception.exc_info)
+
+
+def test_exception_on_processing_done():
+
+    collect_middleware = CollectRequestResponseMiddleware()
+    pomp = Pomp(
+        downloader=DummyDownloader(),
+        middlewares=(
+            RequestResponseMiddleware(
+                request_factory=DummyRequest,
+                bodyjson=False
+            ),
+            collect_middleware,
+        ),
+    )
+
+    pomp.pump(RaiseOnProcessingDoneCralwer())
+
+    # one exception on request middleware plus one on exception processing
+    assert_equal(len(collect_middleware.exceptions), 1)
+    assert_equal(len(collect_middleware.requests), 1)
+    assert_equal(len(collect_middleware.responses), 1)

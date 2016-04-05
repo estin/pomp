@@ -32,7 +32,7 @@ class SimpleQueue(BaseQueue):
     def __init__(self, use_lifo=False):
         self.q = queue.Queue() if use_lifo else queue.LifoQueue()
 
-    def get_requests(self):
+    def get_requests(self, count=None):
         r = self.q.get()
         return r
 
@@ -74,6 +74,7 @@ class Pomp(BaseEngine):
             use_lifo=not breadth_first
         )
         self.queue_semaphore = None
+        self.queue_semaphore_value = None
         self._is_internal_queue = isinstance(
             self.queue, self.DEFAULT_QUEUE_CLASS,
         )
@@ -162,13 +163,16 @@ class Pomp(BaseEngine):
             elif isinstance(response, Planned):  # async behaviour
                 def _(r):
                     # put new requests to queue
+                    response = r.result()
                     self._put_requests(
                         # process response by crawler
                         self.response_callback(
                             crawler,
                             # pass response to middlewares
-                            self._resp_middlewares(r.result(), crawler),
-                        )
+                            self._resp_middlewares(response, crawler),
+                        ),
+                        response=response,
+                        crawler=crawler,
                     )
                 response.add_done_callback(_)
 
@@ -180,7 +184,9 @@ class Pomp(BaseEngine):
                         crawler,
                         # pass response to middlewares
                         self._resp_middlewares(response, crawler),
-                    )
+                    ),
+                    response=response,
+                    crawler=crawler,
                 )
 
     def prepare(self, crawler):
@@ -220,7 +226,7 @@ class Pomp(BaseEngine):
         next_requests = getattr(crawler, 'ENTRY_REQUESTS', None)
         if next_requests:
             self._put_requests(
-                iterator(next_requests), request_done=False,
+                iterator(next_requests), None, request_done=False,
             )
 
         while True:
@@ -228,8 +234,11 @@ class Pomp(BaseEngine):
             # do not fetch from queue request more than downloader can process
             if self.queue_semaphore:
                 self.queue_semaphore.acquire(blocking=True)
+                self.queue_semaphore_value -= 1
 
-            next_requests = self.queue.get_requests()
+            next_requests = self.queue.get_requests(
+                count=self.queue_semaphore_value
+            )
 
             if isinstance(next_requests, StopCommand):
                 break
@@ -243,6 +252,7 @@ class Pomp(BaseEngine):
     def get_queue_semaphore(self):
         workers_count = self.downloader.get_workers_count()
         if workers_count > 1:
+            self.queue_semaphore_value = workers_count
             return threading.BoundedSemaphore(workers_count)
 
     def _process_items(self, crawler, items):
@@ -357,7 +367,8 @@ class Pomp(BaseEngine):
                 )
         return value
 
-    def _put_requests(self, requests, request_done=True):
+    def _put_requests(
+            self, requests, response=None, crawler=None, request_done=True):
 
         def _put(items):
             if items:
@@ -365,7 +376,7 @@ class Pomp(BaseEngine):
                     self.in_progress += 1
                     self.queue.put_requests(item)
             if request_done:
-                self._request_done()
+                self._request_done(response, crawler)
 
         if isinstance(requests, Planned):
             def _(r):
@@ -374,9 +385,10 @@ class Pomp(BaseEngine):
         else:
             _put(requests)
 
-    def _request_done(self):
+    def _request_done(self, response, crawler):
         if self.queue_semaphore:
             self.queue_semaphore.release()
+            self.queue_semaphore_value += 1
 
         self.in_progress -= 1
 
@@ -384,3 +396,18 @@ class Pomp(BaseEngine):
         if self._is_internal_queue and self.in_progress == 0:
             # work done
             self.queue.put_requests(StopCommand())
+
+        # response processing complete
+        try:
+            crawler.on_processing_done(response)
+        except Exception as e:
+            log.exception("On done processing exception")
+            self._exception_middlewares(
+                BaseCrawlException(
+                    request=response.request,
+                    response=response,
+                    exception=e,
+                    exc_info=sys.exc_info(),
+                ),
+                crawler,
+            )

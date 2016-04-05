@@ -151,7 +151,9 @@ class TestSimplerCrawler(object):
             def __init__(self):
                 self.requests = []
 
-            def get_requests(self):
+            def get_requests(self, count=None):
+                # because downloader without workers
+                assert_equal(count, None)
                 try:
                     return self.requests.pop()
                 except IndexError:
@@ -215,3 +217,38 @@ class TestSimplerCrawler(object):
             'http://python.org/1',
             'http://python.org/1/trash',
         ]))
+
+    def test_queue_get_requests_with_count(self):
+
+        class DummyDownloaderWithWorkers(DummyDownloader):
+
+            def get_workers_count(self):
+                return 5
+
+        class SimpleQueue(BaseQueue):
+
+            def __init__(self):
+                self.requests = []
+
+            def get_requests(self, count=None):
+                # Downloader can fetch only one request at one moment, but
+                # have workers count - 5
+                # enginge would ask 4(=5-1) requests from queue
+                assert_equal(count, 4)
+                try:
+                    return self.requests.pop()
+                except IndexError:
+                    return  # empty queue
+
+            def put_requests(self, request):
+                self.requests.append(request)
+
+        pomp = Pomp(
+            downloader=DummyDownloaderWithWorkers(),
+            middlewares=(url_to_request_middl, ),
+        )
+
+        # override internal queue with own
+        pomp.queue = SimpleQueue()
+
+        pomp.pump(Crawler())

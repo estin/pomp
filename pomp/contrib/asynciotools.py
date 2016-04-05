@@ -1,3 +1,4 @@
+import sys
 import logging
 import asyncio
 from functools import partial
@@ -9,7 +10,7 @@ except ImportError:  # pragma: no cover
     from asyncio import async as ensure_future
 
 
-from pomp.core.base import BaseQueue
+from pomp.core.base import BaseQueue, BaseCrawlException
 from pomp.core.utils import iterator, Planned
 from pomp.core.engine import StopCommand
 from pomp.core.engine import Pomp as SyncPomp
@@ -28,7 +29,7 @@ class SimpleAsyncioQueue(BaseQueue):
         self.q = asyncio.Queue() if use_lifo else asyncio.LifoQueue()
 
     @asyncio.coroutine
-    def get_requests(self):
+    def get_requests(self, count=None):
         return (yield from self.q.get())
 
     @asyncio.coroutine
@@ -59,8 +60,11 @@ class AioPomp(SyncPomp):
             # do not fetch from queue request more than downloader can process
             if self.queue_semaphore:
                 yield from self.queue_semaphore.acquire()
+                self.queue_semaphore_value -= 1
 
-            next_requests = yield from self.queue.get_requests()
+            next_requests = yield from self.queue.get_requests(
+                count=self.queue_semaphore_value
+            )
 
             if isinstance(next_requests, StopCommand):
                 break
@@ -86,6 +90,7 @@ class AioPomp(SyncPomp):
                 future = asyncio.Future()
 
                 def _(r):
+                    response = r.result()
                     ensure_future(
                         # put new requests to queue
                         self._put_requests(
@@ -93,8 +98,10 @@ class AioPomp(SyncPomp):
                             self.response_callback(
                                 crawler,
                                 # pass response to middlewares
-                                self._resp_middlewares(r.result(), crawler),
-                            )
+                                self._resp_middlewares(response, crawler),
+                            ),
+                            response,
+                            crawler,
                         )
                     ).add_done_callback(
                         future.set_result
@@ -111,11 +118,14 @@ class AioPomp(SyncPomp):
                         crawler,
                         # pass response to middlewares
                         self._resp_middlewares(response, crawler),
-                    )
+                    ),
+                    response,
+                    crawler,
                 )
 
     @asyncio.coroutine
-    def _put_requests(self, requests, request_done=True):
+    def _put_requests(
+            self, requests, response=None, crawler=None, request_done=True):
 
         @asyncio.coroutine
         def _put(items):
@@ -126,7 +136,7 @@ class AioPomp(SyncPomp):
                     yield from self.queue.put_requests(item)
 
             if request_done:
-                yield from self._request_done()
+                yield from self._request_done(response, crawler)
 
         if isinstance(requests, Planned):
             future = asyncio.Future()
@@ -145,9 +155,10 @@ class AioPomp(SyncPomp):
             yield from _put(requests)
 
     @asyncio.coroutine
-    def _request_done(self):
+    def _request_done(self, response, crawler):
         if self.queue_semaphore:
             self.queue_semaphore.release()
+            self.queue_semaphore_value += 1
 
         self.in_progress -= 1
 
@@ -156,9 +167,25 @@ class AioPomp(SyncPomp):
             # work done
             yield from self.queue.put_requests(StopCommand())
 
+        # response processing complete
+        try:
+            crawler.on_processing_done(response)
+        except Exception as e:
+            log.exception("On done processing exception")
+            self._exception_middlewares(
+                BaseCrawlException(
+                    request=response.request,
+                    response=response,
+                    exception=e,
+                    exc_info=sys.exc_info(),
+                ),
+                crawler,
+            )
+
     def get_queue_semaphore(self):
         workers_count = self.downloader.get_workers_count()
         if workers_count > 1:
+            self.queue_semaphore_value = workers_count
             return asyncio.BoundedSemaphore(workers_count)
 
 

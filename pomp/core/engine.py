@@ -234,7 +234,7 @@ class Pomp(BaseEngine):
 
             # pre-lock
             if self.queue_lock:
-                self.queue_lock.acquire(blocking=True)
+                self.queue_lock.acquire(True)
 
             next_requests = self.queue.get_requests(
                 count=self.queue_semaphore_value
@@ -251,7 +251,7 @@ class Pomp(BaseEngine):
             # can fetch
             if self.queue_lock:
                 if self.queue_semaphore_value <= 0:
-                    self.queue_lock.acquire(blocking=True)
+                    self.queue_lock.acquire(True)
                 elif self.queue_lock.locked():
                     self.queue_lock.release()
 

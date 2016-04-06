@@ -73,8 +73,9 @@ class Pomp(BaseEngine):
         self.queue = queue or self.DEFAULT_QUEUE_CLASS(
             use_lifo=not breadth_first
         )
-        self.queue_semaphore = None
+        self.queue_lock = None
         self.queue_semaphore_value = None
+        self.workers_count = None
         self._is_internal_queue = isinstance(
             self.queue, self.DEFAULT_QUEUE_CLASS,
         )
@@ -206,7 +207,7 @@ class Pomp(BaseEngine):
             pipe.start(crawler)
 
         # configure queue semaphore
-        self.queue_semaphore = self.get_queue_semaphore()
+        self.queue_lock = self.get_queue_lock()
 
     def finish(self, crawler):
         self.downloader.stop()
@@ -231,10 +232,9 @@ class Pomp(BaseEngine):
 
         while True:
 
-            # do not fetch from queue request more than downloader can process
-            if self.queue_semaphore:
-                self.queue_semaphore.acquire(blocking=True)
-                self.queue_semaphore_value -= 1
+            # pre-lock
+            if self.queue_lock:
+                self.queue_lock.acquire(blocking=True)
 
             next_requests = self.queue.get_requests(
                 count=self.queue_semaphore_value
@@ -247,13 +247,22 @@ class Pomp(BaseEngine):
                 iterator(next_requests), crawler,
             )
 
+            # block loop if requests in process more than downloader
+            # can fetch
+            if self.queue_lock:
+                if self.queue_semaphore_value <= 0:
+                    self.queue_lock.acquire(blocking=True)
+                elif self.queue_lock.locked():
+                    self.queue_lock.release()
+
         self.finish(crawler)
 
-    def get_queue_semaphore(self):
+    def get_queue_lock(self):
         workers_count = self.downloader.get_workers_count()
-        if workers_count > 1:
+        if workers_count >= 1:
+            self.workers_count = workers_count
             self.queue_semaphore_value = workers_count
-            return threading.BoundedSemaphore(workers_count)
+            return threading.Lock()
 
     def _process_items(self, crawler, items):
 
@@ -281,6 +290,11 @@ class Pomp(BaseEngine):
     def _req_middlewares(self, requests, crawler):
         # pass requests to middlewares
         for request in requests:
+
+            # decrement count of available requests to fetch
+            if self.queue_lock:
+                self.queue_semaphore_value -= 1
+
             for middleware in self.request_middlewares:
                 try:
                     request = middleware.process_request(
@@ -386,9 +400,14 @@ class Pomp(BaseEngine):
             _put(requests)
 
     def _request_done(self, response, crawler):
-        if self.queue_semaphore:
-            self.queue_semaphore.release()
-            self.queue_semaphore_value += 1
+        if self.queue_lock:
+            # increment counter, but not more then workers count
+            self.queue_semaphore_value = min(
+                self.workers_count,
+                self.queue_semaphore_value + 1,
+            )
+            if self.queue_semaphore_value > 0 and self.queue_lock.locked():
+                self.queue_lock.release()
 
         self.in_progress -= 1
 

@@ -231,10 +231,8 @@ class TestSimplerCrawler(object):
                 self.requests = []
 
             def get_requests(self, count=None):
-                # Downloader can fetch only one request at one moment, but
-                # have workers count - 5
-                # enginge would ask 4(=5-1) requests from queue
-                assert_equal(count, 4)
+                # Downloader can fetch only one request at moment
+                assert_equal(count, 5)
                 try:
                     return self.requests.pop()
                 except IndexError:

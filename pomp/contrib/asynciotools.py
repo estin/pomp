@@ -57,10 +57,9 @@ class AioPomp(SyncPomp):
 
         while True:
 
-            # do not fetch from queue request more than downloader can process
-            if self.queue_semaphore:
-                yield from self.queue_semaphore.acquire()
-                self.queue_semaphore_value -= 1
+            # pre-lock
+            if self.queue_lock:
+                yield from self.queue_lock.acquire()
 
             next_requests = yield from self.queue.get_requests(
                 count=self.queue_semaphore_value
@@ -72,6 +71,15 @@ class AioPomp(SyncPomp):
             yield from self.process_requests(
                 iterator(next_requests), crawler,
             )
+
+            # block loop if requests in process more than downloader
+            # can fetch
+            if self.queue_lock:
+                if self.queue_semaphore_value <= 0:
+                    yield from self.queue_lock.acquire()
+                elif self.queue_lock.locked():
+                    self.queue_lock.release()
+
         self.finish(crawler)
 
     @asyncio.coroutine
@@ -156,9 +164,14 @@ class AioPomp(SyncPomp):
 
     @asyncio.coroutine
     def _request_done(self, response, crawler):
-        if self.queue_semaphore:
-            self.queue_semaphore.release()
-            self.queue_semaphore_value += 1
+        if self.queue_lock:
+            # increment counter, but not more then workers count
+            self.queue_semaphore_value = min(
+                self.workers_count,
+                self.queue_semaphore_value + 1,
+            )
+            if self.queue_semaphore_value > 0 and self.queue_lock.locked():
+                self.queue_lock.release()
 
         self.in_progress -= 1
 
@@ -182,11 +195,12 @@ class AioPomp(SyncPomp):
                 crawler,
             )
 
-    def get_queue_semaphore(self):
+    def get_queue_lock(self):
         workers_count = self.downloader.get_workers_count()
-        if workers_count > 1:
+        if workers_count >= 1:
             self.queue_semaphore_value = workers_count
-            return asyncio.BoundedSemaphore(workers_count)
+            self.workers_count = workers_count
+            return asyncio.Lock()
 
 
 class AioConcurrentCrawler(ConcurrentCrawler):

@@ -8,6 +8,7 @@ Version 0.2.1
 
 Not yet released
 
+- fix: `AioPomp` ensure_future for process_requests in main loop
 - `BaseCrawler.on_processing_done` when request, middlewares, response,
   extract, pipelines processing was done
 - count param for `BaseQueue.get_requests` - number allowed concurrent

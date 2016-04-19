@@ -55,6 +55,11 @@ class AioPomp(SyncPomp):
                 iterator(next_requests), request_done=False,
             )
 
+        _pending_iteration_tasks = []
+
+        def _on_iterations_task_done(task, future):
+            _pending_iteration_tasks.remove(task)
+
         while True:
 
             # pre-lock
@@ -68,8 +73,15 @@ class AioPomp(SyncPomp):
             if isinstance(next_requests, StopCommand):
                 break
 
-            yield from self.process_requests(
-                iterator(next_requests), crawler,
+            # process requests and do not block loop
+            task = asyncio.ensure_future(
+                self.process_requests(
+                    iterator(next_requests), crawler,
+                )
+            )
+            _pending_iteration_tasks.append(task)
+            task.add_done_callback(
+                partial(_on_iterations_task_done, task)
             )
 
             # block loop if requests in process more than downloader
@@ -79,6 +91,14 @@ class AioPomp(SyncPomp):
                     yield from self.queue_lock.acquire()
                 elif self.queue_lock.locked():
                     self.queue_lock.release()
+
+        # loop ended, but we have pending tasks - wait
+        if _pending_iteration_tasks:
+            log.debug(
+                "Wait pending iteration tasks: %s",
+                len(_pending_iteration_tasks),
+            )
+            yield from asyncio.wait(_pending_iteration_tasks)
 
         self.finish(crawler)
 

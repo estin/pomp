@@ -250,3 +250,21 @@ class TestSimplerCrawler(object):
         pomp.queue = SimpleQueue()
 
         pomp.pump(Crawler())
+
+    def test_pipeline_exception(self):
+
+        class PipelineWithException(BasePipeline):
+
+            def process(self, crawler, item):
+                raise RuntimeError("some exception")
+
+        pomp = Pomp(
+            downloader=DummyDownloader(),
+            middlewares=[url_to_request_middl],
+            pipelines=[
+                PipelineWithException(),
+            ],
+        )
+
+        pomp.pump(Crawler())
+

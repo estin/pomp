@@ -103,12 +103,12 @@ class Pomp(BaseEngine):
                 requests_from_items = itertools.chain(
                     requests_from_items,
                     self._process_items(
-                        crawler, iterator(items)
+                        crawler, iterator(items), response=response,
                     )
                 )
         else:
             requests_from_items = self._process_items(
-                crawler, iterator(result)
+                crawler, iterator(result), response=response,
             )
 
         next_requests = crawler.next_requests(response)
@@ -204,7 +204,19 @@ class Pomp(BaseEngine):
 
         for pipe in self.pipelines:
             log.info('Start pipe: %s', pipe)
-            pipe.start(crawler)
+            try:
+                pipe.start(crawler)
+            except Exception as e:
+                log.exception("On pipe start")
+                self._exception_middlewares(
+                    BaseCrawlException(
+                        request=None,
+                        response=None,
+                        exception=e,
+                        exc_info=sys.exc_info(),
+                    ),
+                    crawler,
+                )
 
         # configure queue semaphore
         self.queue_lock = self.get_queue_lock()
@@ -213,7 +225,19 @@ class Pomp(BaseEngine):
         self.downloader.stop()
         for pipe in self.pipelines:
             log.info('Stop pipe: %s', pipe)
-            pipe.stop(crawler)
+            try:
+                pipe.stop(crawler)
+            except Exception as e:
+                log.exception("On pipe stop")
+                self._exception_middlewares(
+                    BaseCrawlException(
+                        request=None,
+                        response=None,
+                        exception=e,
+                        exc_info=sys.exc_info(),
+                    ),
+                    crawler,
+                )
         log.info('Stop crawler: %s', crawler)
 
     def pump(self, crawler):
@@ -264,7 +288,7 @@ class Pomp(BaseEngine):
             self.queue_semaphore_value = workers_count
             return threading.Lock()
 
-    def _process_items(self, crawler, items):
+    def _process_items(self, crawler, items, response=None):
 
         for item in items:
 
@@ -277,15 +301,27 @@ class Pomp(BaseEngine):
             else:
                 # proccess item as data item by pipes
                 for pipe in self.pipelines:
-                    item = pipe.process(crawler, item)
-
-                    # item filtered - stop pipe processing
-                    if not item:
-                        log.debug(
-                            "Stop item processing. Pipeline %s on %s",
-                            pipe, item,
+                    try:
+                        item = pipe.process(crawler, item)
+                    except Exception as e:
+                        log.exception("On pipe process")
+                        self._exception_middlewares(
+                            BaseCrawlException(
+                                request=response.request,
+                                response=response,
+                                exception=e,
+                                exc_info=sys.exc_info(),
+                            ),
+                            crawler,
                         )
-                        break
+                    else:
+                        # item filtered - stop pipe processing
+                        if not item:
+                            log.debug(
+                                "Stop item processing. Pipeline %s on %s",
+                                pipe, item,
+                            )
+                            break
 
     def _req_middlewares(self, requests, crawler):
         # pass requests to middlewares

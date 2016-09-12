@@ -43,7 +43,7 @@ Continuous integration status by drone.io:
     :alt: Latest CI test
 
 .. image:: https://codecov.io/bb/estin/pomp/branch/default/graph/badge.svg
-    :target: https://codecov.io/bitbucket/estin/pomp?branch=default
+    :target: https://codecov.io/bb/estin/pomp/branch/default
     :alt: codecov
 
 

@@ -1,28 +1,41 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
-from setuptools import setup, find_packages
+from setuptools import setup
 
 
 here = os.path.dirname(os.path.abspath(__file__))
 
+about = {}
+with open(os.path.join(here, "pomp", "__init__.py")) as f:
+    exec(f.read(), about)
+
+install_requires = []
+if sys.version_info < (3, 2):
+    install_requires.append('futures')
+
+packages = [
+    'pomp', 'pomp.core', 'pomp.contrib',
+]
+if sys.version_info > (3, 3):
+    packages.append('pomp.contrib.asynciotools')
+
 
 setup(
     name='pomp',
-    version=":versiontools:pomp:",
+    version=about['__version__'],
     url='http://bitbucket.org/estin/pomp',
     license='BSD',
     author='Evgeniy Tatarkin',
     author_email='tatarkin.evg@gmail.com',
     description='Screen scraping and web crawling framework',
     long_description=open(os.path.join(here, 'README.rst')).read(),
-    packages=find_packages(),
+    packages=packages,
     zip_safe=False,
     platforms='any',
     tests_require=['nose >= 1.0', ],
     test_suite='nose.collector',
-    setup_requires=['versiontools >= 1.8', ],
-    install_requires=['futures', ] if sys.version_info < (3, 2) else [],
+    install_requires=install_requires,
     classifiers=[
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',

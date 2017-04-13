@@ -1,13 +1,12 @@
 # coding: utf-8
 """
-    Stolen from https://github.com/scrapy/dirbot
+    Stolen from https://github.com/scrapy/quotesbot
 
     requires: lxml
 
-    store csv data to /<os tmpdir>/dmoz.csv
+    store csv data to /<os tmpdir>/quotes.csv
 """
 import os
-import re
 import sys
 import logging
 import tempfile
@@ -66,14 +65,14 @@ class LXMLDownloaderMiddleware(BaseMiddleware):
         return response
 
 
-class WebsiteItem(Item):
+class QuotesItem(Item):
 
-    name = Field()
-    url = Field()
-    description = Field()
+    author = Field()
+    text = Field()
+    tags = Field()
 
     def __str__(self):
-        return u'{s.name}\nurl: {s.url}\ndesc: {s.description}'.format(s=self)
+        return u'{s.author}:\n{s.text}\ntags: {s.tags}'.format(s=self)
 
 
 class PrintPipeline(BasePipeline):
@@ -84,42 +83,35 @@ class PrintPipeline(BasePipeline):
         return item
 
 
-class DmozSpider(BaseCrawler):
-    BASE_URL = 'http://www.dmoz.org/'
+class QuotesSpider(BaseCrawler):
+    BASE_URL = 'http://quotes.toscrape.com/'
 
     ENTRY_REQUESTS = UrllibHttpRequest(urljoin(
-        BASE_URL, '/Computers/Programming/Languages/Python/Books/'
+        BASE_URL, '/tag/books/'
     ))
 
-    DESCRIPTION_CLEANUP_RE = re.compile('-\s([^\n]*?)\\n')
-
-    SITES_XPATH = '//ul[@class="directory-url"]/li'
-    NEXT_URLS_XPATH = '//ul[@class="language"]/li/a'
+    QUOTES_XPATH = '//div[@class="quote"]'
+    NEXT_URLS_XPATH = '//li[@class="next"]/a'
 
     def __init__(self):
-        super(DmozSpider, self).__init__()
-        self._parsed_urls = [self.ENTRY_REQUESTS]
+        super(QuotesSpider, self).__init__()
 
     def extract_items(self, response):
 
         # extract data
-        for site in response.tree.xpath(self.SITES_XPATH):
-            item = WebsiteItem()
+        for quote in response.tree.xpath(self.QUOTES_XPATH):
+            item = QuotesItem()
 
-            item.name = ''.join(site.xpath('a/text()'))
-            item.url = ''.join(site.xpath('a/@href'))
-            item.description = ''.join(self.DESCRIPTION_CLEANUP_RE.findall(
-                ''.join(site.xpath('text()'))
-            ))
+            item.author = ''.join(
+                quote.xpath('.//small[@class="author"]/text()'))
+            item.text = ''.join(quote.xpath('span[@class="text"]/text()'))
+            item.tags = quote.xpath('.//a[@class="tag"]/text()')
 
             yield item
 
         # extract next urls
         for link in response.tree.xpath(self.NEXT_URLS_XPATH):
-            url = urljoin(self.BASE_URL, link.get('href'))
-            if url not in self._parsed_urls:
-                self._parsed_urls.append(url)
-                yield UrllibHttpRequest(url)
+            yield UrllibHttpRequest(urljoin(self.BASE_URL, link.get('href')))
 
 
 if __name__ == '__main__':
@@ -132,17 +124,17 @@ if __name__ == '__main__':
         LXMLDownloaderMiddleware(encoding='utf-8'),
     )
 
-    filepath = os.path.join(tempfile.gettempdir(), 'dmoz.csv')
+    filepath = os.path.join(tempfile.gettempdir(), 'quotes.csv')
     pomp = Pomp(
         downloader=ConcurrentUrllibDownloader(
             pool_size=3,
         ),
         middlewares=middlewares,
-        pipelines=[
+        pipelines=(
             PrintPipeline(),
             CsvPipeline(filepath, delimiter=';', quotechar='"'),
-        ],
+        ),
     )
 
-    pomp.pump(DmozSpider())
+    pomp.pump(QuotesSpider())
     print("Statistics:\n %s" % statistics)

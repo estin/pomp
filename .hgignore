@@ -15,3 +15,5 @@ build/
 ctags
 .python-version
 *.log
+Pipfile
+Pipfile.lock

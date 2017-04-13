@@ -59,16 +59,16 @@ class AiohttpAdapterMiddleware(BaseMiddleware):
 
 
 class AiohttpDownloader(BaseDownloader):
-    @asyncio.coroutine
-    def _fetch(self, request, future):
+    async def _fetch(self, request, future):
         log.debug("[AiohttpDownloader] Start fetch: %s", request.url)
-        r = yield from aiohttp.get(request.url)
-        body = yield from r.text()
-        log.debug(
-            "[AiohttpDownloader] Done %s: %s %s",
-            request.url, len(body), body[0:20],
-        )
-        future.set_result(AiohttpResponse(request, body))
+        async with aiohttp.ClientSession() as session:
+            async with session.get(request.url) as response:
+                body = await response.text()
+                log.debug(
+                    "[AiohttpDownloader] Done %s: %s %s",
+                    request.url, len(body), body[0:20],
+                )
+                future.set_result(AiohttpResponse(request, body))
 
     def get_workers_count(self):
         return 2

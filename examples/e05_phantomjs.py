@@ -187,7 +187,7 @@ class TwitterSpider(BaseCrawler):
 
 if __name__ == '__main__':
     from pomp.core.engine import Pomp
-    from e02_dmoz import (
+    from e02_quotes import (
         PrintPipeline, LXMLDownloaderMiddleware, StatisticMiddleware,
     )
 

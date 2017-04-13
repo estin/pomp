@@ -28,20 +28,17 @@ class SimpleAsyncioQueue(BaseQueue):
     def __init__(self, use_lifo=False):
         self.q = asyncio.Queue() if use_lifo else asyncio.LifoQueue()
 
-    @asyncio.coroutine
-    def get_requests(self, count=None):
-        return (yield from self.q.get())
+    async def get_requests(self, count=None):
+        return await self.q.get()
 
-    @asyncio.coroutine
-    def put_requests(self, requests):
-        yield from self.q.put(requests)
+    async def put_requests(self, requests):
+        await self.q.put(requests)
 
 
 class AioPomp(SyncPomp):
     DEFAULT_QUEUE_CLASS = SimpleAsyncioQueue
 
-    @asyncio.coroutine
-    def pump(self, crawler):
+    async def pump(self, crawler):
         """Start crawling
 
         :param crawler: isntance of :class:`pomp.core.base.BaseCrawler`
@@ -51,7 +48,7 @@ class AioPomp(SyncPomp):
         # add ENTRY_REQUESTS to the queue
         next_requests = getattr(crawler, 'ENTRY_REQUESTS', None)
         if next_requests:
-            yield from self._put_requests(
+            await self._put_requests(
                 iterator(next_requests), request_done=False,
             )
 
@@ -64,9 +61,9 @@ class AioPomp(SyncPomp):
 
             # pre-lock
             if self.queue_lock:
-                yield from self.queue_lock.acquire()
+                await self.queue_lock.acquire()
 
-            next_requests = yield from self.queue.get_requests(
+            next_requests = await self.queue.get_requests(
                 count=self.queue_semaphore_value
             )
 
@@ -88,7 +85,7 @@ class AioPomp(SyncPomp):
             # can fetch
             if self.queue_lock:
                 if self.queue_semaphore_value <= 0:
-                    yield from self.queue_lock.acquire()
+                    await self.queue_lock.acquire()
                 elif self.queue_lock.locked():
                     self.queue_lock.release()
 
@@ -98,12 +95,11 @@ class AioPomp(SyncPomp):
                 "Wait pending iteration tasks: %s",
                 len(_pending_iteration_tasks),
             )
-            yield from asyncio.wait(_pending_iteration_tasks)
+            await asyncio.wait(_pending_iteration_tasks)
 
         self.finish(crawler)
 
-    @asyncio.coroutine
-    def process_requests(self, requests, crawler):
+    async def process_requests(self, requests, crawler):
 
         # execute requests by downloader
         for response in self.downloader.process(
@@ -137,10 +133,10 @@ class AioPomp(SyncPomp):
 
                 response.add_done_callback(_)
 
-                yield from future
+                await future
             else:
                 # put new requests to queue
-                yield from self._put_requests(
+                await self._put_requests(
                     # process response by crawler
                     self.response_callback(
                         crawler,
@@ -151,20 +147,18 @@ class AioPomp(SyncPomp):
                     crawler,
                 )
 
-    @asyncio.coroutine
-    def _put_requests(
+    async def _put_requests(
             self, requests, response=None, crawler=None, request_done=True):
 
-        @asyncio.coroutine
-        def _put(items):
+        async def _put(items):
 
             if items:
                 for item in items:
                     self.in_progress += 1
-                    yield from self.queue.put_requests(item)
+                    await self.queue.put_requests(item)
 
             if request_done:
-                yield from self._request_done(response, crawler)
+                await self._request_done(response, crawler)
 
         if isinstance(requests, Planned):
             future = asyncio.Future()
@@ -178,12 +172,11 @@ class AioPomp(SyncPomp):
 
             requests.add_done_callback(_)
 
-            yield from future
+            await future
         else:
-            yield from _put(requests)
+            await _put(requests)
 
-    @asyncio.coroutine
-    def _request_done(self, response, crawler):
+    async def _request_done(self, response, crawler):
         if self.queue_lock:
             # increment counter, but not more then workers count
             self.queue_semaphore_value = min(
@@ -198,7 +191,7 @@ class AioPomp(SyncPomp):
         # send StopCommand if all jobs are done and running on internal queue
         if self._is_internal_queue and self.in_progress == 0:
             # work done
-            yield from self.queue.put_requests(StopCommand())
+            await self.queue.put_requests(StopCommand())
 
         # response processing complete
         try:

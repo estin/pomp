@@ -36,18 +36,9 @@ If you want proxies, redirects, or similar, you may use the excellent
 
 `Pomp docs`_
 
-Continuous integration status by drone.io:
-
-.. image:: https://drone.io/bitbucket.org/estin/pomp/status.png
-    :target: https://drone.io/bitbucket.org/estin/pomp/latest
-    :alt: Latest CI test
-
-.. image:: https://codecov.io/bb/estin/pomp/branch/default/graph/badge.svg
+.. image:: https://img.shields.io/codecov/c/bitbucket/estin/pomp/default.png
     :target: https://codecov.io/bb/estin/pomp/branch/default
     :alt: codecov
-
-
-PyPI status:
 
 .. image:: https://img.shields.io/pypi/v/pomp.png
     :target: https://pypi.python.org/pypi/pomp/
@@ -64,8 +55,6 @@ PyPI status:
 .. image:: https://img.shields.io/pypi/l/pomp.png
     :target: https://pypi.python.org/pypi/pomp/
     :alt: License
-
-Docs status:
 
 .. image:: https://readthedocs.org/projects/pomp/badge/?version=latest
     :target: https://readthedocs.org/projects/pomp/?badge=latest

@@ -2,9 +2,8 @@
 asyncio support
 For python >= 3.4, requires: aiohttp, lxml
 
-e02_dmoz.py on aiohttp downloader
+e02_quotes.py on aiohttp downloader
 """
-# import re
 import sys
 import logging
 import asyncio
@@ -46,16 +45,16 @@ class AiohttpResponse(BaseHttpResponse):
 
 class AiohttpDownloader(BaseDownloader):
 
-    @asyncio.coroutine
-    def _fetch(self, request, future):
+    async def _fetch(self, request, future):
         log.debug("[AiohttpDownloader] Start fetch: %s", request.url)
-        r = yield from aiohttp.get(request.url)
-        body = yield from r.text()
-        log.debug(
-            "[AiohttpDownloader] Done %s: %s %s",
-            request.url, len(body), body[0:20],
-        )
-        future.set_result(AiohttpResponse(request, body))
+        async with aiohttp.ClientSession() as session:
+            async with session.get(request.url) as response:
+                body = await response.text()
+                log.debug(
+                    "[AiohttpDownloader] Done %s: %s %s",
+                    request.url, len(body), body[0:20],
+                )
+                future.set_result(AiohttpResponse(request, body))
 
     def get(self, requests):
         for request in requests:
@@ -74,8 +73,8 @@ class AiohttpDownloader(BaseDownloader):
 
 if __name__ == '__main__':
     from pomp.contrib.asynciotools import AioPomp
-    from e02_dmoz import (
-        PrintPipeline, DmozSpider, LXMLDownloaderMiddleware,
+    from e02_quotes import (
+        PrintPipeline, QuotesSpider, LXMLDownloaderMiddleware,
         StatisticMiddleware,
     )
 
@@ -89,6 +88,6 @@ if __name__ == '__main__':
         ),
         pipelines=[PrintPipeline()],
     )
-    loop.run_until_complete(pomp.pump(DmozSpider()))
+    loop.run_until_complete(pomp.pump(QuotesSpider()))
     loop.close()
     print("Statistics:\n %s" % statistics)

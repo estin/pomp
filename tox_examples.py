@@ -17,7 +17,7 @@ FOR_TESTING = (
     './docs/examples/minimalapp.py',
     './docs/examples/customdowloader.py',
     './examples/e01_pythonnews.py',
-    './examples/e02_dmoz.py',
+    './examples/e02_quotes.py',
     './examples/e03_queue.py',
 )
 

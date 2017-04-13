@@ -267,4 +267,3 @@ class TestSimplerCrawler(object):
         )
 
         pomp.pump(Crawler())
-

@@ -1,5 +1,4 @@
 import logging
-from nose.tools import assert_equal
 from pomp.core.base import BaseCrawler, BasePipeline, BaseQueue
 from pomp.core.engine import Pomp
 
@@ -74,11 +73,11 @@ class TestSimplerCrawler(object):
         pomp.pump(crawler_class())
 
         log.debug("in road %s", [item.url for item in road.collection])
-        assert_equal([item.url for item in road.collection], [
+        assert [item.url for item in road.collection] == [
             'http://python.org/1',
             'http://python.org/1/trash',
             'http://python.org/2',
-        ])
+        ]
 
         # Width first method
         road.reset()
@@ -94,11 +93,11 @@ class TestSimplerCrawler(object):
         pomp.pump(crawler_class())
 
         log.debug("in road %s", [item.url for item in road.collection])
-        assert_equal([item.url for item in road.collection], [
+        assert [item.url for item in road.collection] == [
             'http://python.org/1',
             'http://python.org/2',
             'http://python.org/1/trash',
-        ])
+        ]
 
     def test_pipeline(self):
 
@@ -138,10 +137,10 @@ class TestSimplerCrawler(object):
 
         pomp.pump(Crawler())
 
-        assert_equal([(item.url, item.value) for item in result], [
+        assert [(item.url, item.value) for item in result] == [
             ('http://python.org/1', 2),
             ('http://python.org/2', 2),
-        ])
+        ]
 
     def test_queue_crawler(self):
         road = RoadPipeline()
@@ -153,7 +152,7 @@ class TestSimplerCrawler(object):
 
             def get_requests(self, count=None):
                 # because downloader without workers
-                assert_equal(count, None)
+                assert count is None
                 try:
                     return self.requests.pop()
                 except IndexError:
@@ -175,11 +174,11 @@ class TestSimplerCrawler(object):
 
         pomp.pump(Crawler())
 
-        assert_equal(set([item.url for item in road.collection]), set([
+        assert set([item.url for item in road.collection]) == set([
             'http://python.org/1',
             'http://python.org/1/trash',
             'http://python.org/2',
-        ]))
+        ])
 
     def test_crawler_return_none(self):
 
@@ -213,10 +212,10 @@ class TestSimplerCrawler(object):
             ],
         )
         pomp.pump(CrawlerWithoutNextRequestMethod())
-        assert_equal(set([item.url for item in road.collection]), set([
+        assert set([item.url for item in road.collection]) == set([
             'http://python.org/1',
             'http://python.org/1/trash',
-        ]))
+        ])
 
     def test_queue_get_requests_with_count(self):
 
@@ -232,7 +231,7 @@ class TestSimplerCrawler(object):
 
             def get_requests(self, count=None):
                 # Downloader can fetch only one request at moment
-                assert_equal(count, 5)
+                assert count == 5
                 try:
                     return self.requests.pop()
                 except IndexError:

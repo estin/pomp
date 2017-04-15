@@ -1,5 +1,4 @@
 import logging
-from nose.tools import assert_set_equal, assert_equal
 from pomp.core.base import BaseCrawler, BaseMiddleware
 from pomp.core.engine import Pomp
 from pomp.contrib.urllibtools import UrllibDownloader
@@ -16,12 +15,12 @@ logging.basicConfig(level=logging.DEBUG)
 class TestContribUrllib(object):
 
     @classmethod
-    def setupClass(cls):
+    def setup_class(cls):
         cls.httpd = HttpServer(sitemap=make_sitemap(level=2, links_on_page=2))
         cls.httpd.start()
 
     @classmethod
-    def teardownClass(cls):
+    def teardown_class(cls):
         cls.httpd.stop()
 
     def test_urllib_downloader(self):
@@ -49,11 +48,10 @@ class TestContribUrllib(object):
 
         pomp.pump(Crawler())
 
-        assert_set_equal(
+        assert \
             set([r.url.replace(self.httpd.location, '')
-                for r in collect_middleware.requests]),
+                for r in collect_middleware.requests]) == \
             set(self.httpd.sitemap.keys())
-        )
 
     def test_exception_handling(self):
 
@@ -90,4 +88,4 @@ class TestContribUrllib(object):
 
         pomp.pump(MockCrawler())
 
-        assert_equal(len(catch_exception_middleware.exceptions), 1)
+        assert len(catch_exception_middleware.exceptions) == 1

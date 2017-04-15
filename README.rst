@@ -36,8 +36,13 @@ If you want proxies, redirects, or similar, you may use the excellent
 
 `Pomp docs`_
 
-.. image:: https://img.shields.io/codecov/c/bitbucket/estin/pomp/default.png
-    :target: https://codecov.io/bb/estin/pomp/branch/default
+.. image:: https://img.shields.io/circleci/project/github/estin/pomp/master.png
+    :target: https://circleci.com/gh/estin/pomp/tree/master
+    :alt: circleci
+
+
+.. image:: https://img.shields.io/codecov/c/github/estin/pomp/master.png
+    :target: https://codecov.io/gh/estin/pomp/branch/master
     :alt: codecov
 
 .. image:: https://img.shields.io/pypi/v/pomp.png

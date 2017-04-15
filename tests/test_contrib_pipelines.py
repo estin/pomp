@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+import os
 import csv
 import codecs
 import logging
-from nose.tools import assert_equal
+import tempfile
+
 from pomp.contrib.item import Item, Field
 from pomp.contrib.pipelines import CsvPipeline
 
@@ -43,7 +45,8 @@ class TestContribPipelines(object):
             pipe.stop(None)
 
         # open file and init pipe
-        with codecs.open('test_pipe.csv', 'w', encoding='utf-8') as csvfile:
+        filepath = os.path.join(tempfile.gettempdir(), 'test_pipe.csv')
+        with codecs.open(filepath, 'w', encoding='utf-8') as csvfile:
 
             _process(csvfile)
 
@@ -51,10 +54,11 @@ class TestContribPipelines(object):
             csvfile.flush()
             with open(csvfile.name, 'r') as csvres:
                 res = csvres.read()
-                assert_equal(res.strip(), 'f1;f2;;f4')
+                assert res.strip() == 'f1;f2;;f4'
 
         # init pipe by filepath
-        _process('test_pipe2.csv')
-        with open('test_pipe2.csv', 'r') as csvres:
+        filepath = os.path.join(tempfile.gettempdir(), 'test_pipe2.csv')
+        _process(filepath)
+        with open(filepath, 'r') as csvres:
             res = csvres.read()
-            assert_equal(res.strip(), 'f1;f2;;f4')
+            assert res.strip() == 'f1;f2;;f4'

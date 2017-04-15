@@ -8,8 +8,6 @@ try:
 except Exception:
     from StringIO import StringIO
 
-from nose import SkipTest
-from nose.tools import assert_equal, assert_set_equal
 
 from pomp.core.base import BaseDownloadWorker
 from pomp.core.engine import Pomp
@@ -18,12 +16,9 @@ from pomp.contrib.urllibtools import (
 )
 from pomp.core.utils import PY3
 
-try:
-    from pomp.contrib.concurrenttools import (
-        ConcurrentCrawler, ConcurrentDownloader, ConcurrentUrllibDownloader,
-    )
-except ImportError:
-    raise SkipTest('concurrent future not available')
+from pomp.contrib.concurrenttools import (
+    ConcurrentCrawler, ConcurrentDownloader, ConcurrentUrllibDownloader,
+)
 
 from tools import DummyCrawler
 from tools import RequestResponseMiddleware, CollectRequestResponseMiddleware
@@ -73,12 +68,12 @@ class MockedCrawlerWorkerWithException(MockedCrawlerWorker):
 class TestContribConcurrent(object):
 
     @classmethod
-    def setupClass(cls):
+    def setup_class(cls):
         cls.httpd = HttpServer(sitemap=make_sitemap(level=2, links_on_page=2))
         cls.httpd.start()
 
     @classmethod
-    def teardownClass(cls):
+    def teardown_class(cls):
         cls.httpd.stop()
 
     def test_concurrent_downloader(self):
@@ -106,11 +101,10 @@ class TestContribConcurrent(object):
 
         pomp.pump(Crawler())
 
-        assert_set_equal(
+        assert \
             set([r.url.replace('http://localhost', '')
-                for r in collect_middleware.requests]),
+                for r in collect_middleware.requests]) == \
             set(MockedDownloadWorker.sitemap.keys())
-        )
 
     def test_exception_on_downloader_worker(self):
         req_resp_midlleware = RequestResponseMiddleware(
@@ -137,8 +131,8 @@ class TestContribConcurrent(object):
 
         pomp.pump(Crawler())
 
-        assert_equal(len(collect_middleware.requests), 1)
-        assert_equal(len(collect_middleware.exceptions), 1)
+        assert len(collect_middleware.requests) == 1
+        assert len(collect_middleware.exceptions) == 1
 
     def test_concurrent_urllib_downloader(self):
         req_resp_midlleware = RequestResponseMiddleware(
@@ -165,11 +159,10 @@ class TestContribConcurrent(object):
 
         pomp.pump(Crawler())
 
-        assert_set_equal(
+        assert \
             set([r.url.replace(self.httpd.location, '')
-                for r in collect_middleware.requests]),
+                for r in collect_middleware.requests]) == \
             set(self.httpd.sitemap.keys())
-        )
 
     def test_concurrent_crawler(self):
         req_resp_midlleware = RequestResponseMiddleware(
@@ -198,11 +191,10 @@ class TestContribConcurrent(object):
             worker_class=MockedCrawlerWorker,
         ))
 
-        assert_set_equal(
+        assert \
             set([r.url.replace(self.httpd.location, '')
-                for r in collect_middleware.requests]),
+                for r in collect_middleware.requests]) == \
             set(self.httpd.sitemap.keys())
-        )
 
     def test_exception_on_crawler_worker(self):
         req_resp_midlleware = RequestResponseMiddleware(
@@ -231,5 +223,5 @@ class TestContribConcurrent(object):
             worker_class=MockedCrawlerWorkerWithException,
         ))
 
-        assert_equal(len(collect_middleware.requests), 1)
-        assert_equal(len(collect_middleware.exceptions), 1)
+        assert len(collect_middleware.requests) == 1
+        assert len(collect_middleware.exceptions) == 1

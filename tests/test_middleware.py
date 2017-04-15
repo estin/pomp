@@ -1,7 +1,6 @@
 import sys
 import pickle
 import logging
-from nose.tools import assert_equal, assert_false
 
 from pomp.core.base import BaseMiddleware, BaseCrawlException
 from pomp.core.engine import Pomp
@@ -77,9 +76,9 @@ def test_exception_on_processing_request():
 
     pomp.pump(Crawler())
 
-    assert_equal(len(collect_middleware.exceptions), 1)
-    assert_equal(len(collect_middleware.requests), 0)
-    assert_equal(len(collect_middleware.responses), 0)
+    assert len(collect_middleware.exceptions) == 1
+    assert len(collect_middleware.requests) == 0
+    assert len(collect_middleware.responses) == 0
 
 
 def test_exception_on_processing_response():
@@ -95,9 +94,9 @@ def test_exception_on_processing_response():
 
     pomp.pump(Crawler())
 
-    assert_equal(len(collect_middleware.exceptions), 1)
-    assert_equal(len(collect_middleware.requests), 1)
-    assert_equal(len(collect_middleware.responses), 1)
+    assert len(collect_middleware.exceptions) == 1
+    assert len(collect_middleware.requests) == 1
+    assert len(collect_middleware.responses) == 1
 
 
 def test_exception_on_processing_response_callback():
@@ -116,9 +115,9 @@ def test_exception_on_processing_response_callback():
 
     pomp.pump(CrawlerWithException())
 
-    assert_equal(len(collect_middleware.exceptions), 1)
-    assert_equal(len(collect_middleware.requests), 1)
-    assert_equal(len(collect_middleware.responses), 1)
+    assert len(collect_middleware.exceptions) == 1
+    assert len(collect_middleware.requests) == 1
+    assert len(collect_middleware.responses) == 1
 
 
 def test_exception_on_processing_exception():
@@ -136,9 +135,9 @@ def test_exception_on_processing_exception():
     pomp.pump(Crawler())
 
     # one exception on request middleware plus one on exception processing
-    assert_equal(len(collect_middleware.exceptions), 1 + 1)
-    assert_equal(len(collect_middleware.requests), 0)
-    assert_equal(len(collect_middleware.responses), 0)
+    assert len(collect_middleware.exceptions) == 1 + 1
+    assert len(collect_middleware.requests) == 0
+    assert len(collect_middleware.responses) == 0
 
 
 def test_exception_pickling():
@@ -152,7 +151,7 @@ def test_exception_pickling():
             exc_info=sys.exc_info(),
         )
         exception = pickle.loads(pickle.dumps(exception))
-        assert_false(exception.exc_info)
+        assert not exception.exc_info
 
 
 def test_exception_on_processing_done():
@@ -172,6 +171,6 @@ def test_exception_on_processing_done():
     pomp.pump(RaiseOnProcessingDoneCralwer())
 
     # one exception on request middleware plus one on exception processing
-    assert_equal(len(collect_middleware.exceptions), 1)
-    assert_equal(len(collect_middleware.requests), 1)
-    assert_equal(len(collect_middleware.responses), 1)
+    assert len(collect_middleware.exceptions) == 1
+    assert len(collect_middleware.requests) == 1
+    assert len(collect_middleware.responses) == 1

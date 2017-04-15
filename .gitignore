@@ -1,0 +1,13 @@
+*.pyc
+__pycache__/
+.cache
+pomp.egg-info/
+docs/_build
+dist
+build
+Pipfile
+Pipfile.lock
+.coverage*
+coverage.xml
+*.log
+.tox

@@ -3,6 +3,14 @@ pomp changelog
 
 Here you can see the full list of changes between pomp releases.
 
+Version 0.2.2
+-------------
+
+Does not released yet
+
+- asynciotools with async/await syntax
+
+
 Version 0.2.1
 -------------
 

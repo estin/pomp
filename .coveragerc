@@ -7,3 +7,5 @@ omit=
     .tox/*
     tests/*
     /usr/local/lib/*
+    /usr/local/lib/*
+    */.local/*

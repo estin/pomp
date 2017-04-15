@@ -33,8 +33,6 @@ setup(
     packages=packages,
     zip_safe=False,
     platforms='any',
-    tests_require=['nose >= 1.0', ],
-    test_suite='nose.collector',
     install_requires=install_requires,
     classifiers=[
         'Intended Audience :: Developers',

@@ -1,13 +1,9 @@
-from nose.plugins.skip import SkipTest
+import pytest
 
-try:
-    import asyncio
-    import aiohttp
-except ImportError:
-    raise SkipTest('asyncio or aiohttp not available')
+asyncio = pytest.importorskip("asyncio")  # noqa
+aiohttp = pytest.importorskip("aiohttp")  # noqa
 
 import logging
-from nose.tools import assert_set_equal
 from pomp.core.base import (
     BaseHttpRequest, BaseHttpResponse, BaseDownloader, BaseMiddleware,
 )
@@ -94,14 +90,13 @@ class Crawler(DummyCrawler):
 
 class TestContribAsyncio(object):
     @classmethod
-    def setupClass(cls):
+    def setup_class(cls):
         cls.httpd = HttpServer(sitemap=make_sitemap(level=2, links_on_page=2))
         cls.httpd.start()
 
     @classmethod
-    def teardownClass(cls):
+    def teardown_class(cls):
         cls.httpd.stop()
-        asyncio.get_event_loop().close()
 
     def setup(self):
         self.req_resp_midlleware = RequestResponseMiddleware(
@@ -129,11 +124,10 @@ class TestContribAsyncio(object):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(pomp.pump(Crawler()))
 
-        assert_set_equal(
+        assert \
             set([r.url.replace(self.httpd.location, '')
-                for r in self.collect_middleware.requests]),
+                for r in self.collect_middleware.requests]) == \
             set(self.httpd.sitemap.keys())
-        )
 
     def test_asyncio_concurrent_crawler(self):
         pomp = AioPomp(
@@ -152,8 +146,7 @@ class TestContribAsyncio(object):
             )
         ))
 
-        assert_set_equal(
+        assert \
             set([r.url.replace(self.httpd.location, '')
-                for r in self.collect_middleware.requests]),
+                for r in self.collect_middleware.requests]) == \
             set(self.httpd.sitemap.keys())
-        )

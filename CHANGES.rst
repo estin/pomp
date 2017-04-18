@@ -9,6 +9,8 @@ Version 0.2.2
 Does not released yet
 
 - asynciotools with async/await syntax
+- removed `RUNNING`, `CANCELLED_AND_NOTIFIED`, `exception` method from
+  `Planned` class
 
 
 Version 0.2.1

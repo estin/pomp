@@ -29,26 +29,19 @@ def isstring(obj):
 # Planned like Future
 # Possible future states (for internal use by the futures package).
 PENDING = 'PENDING'
-RUNNING = 'RUNNING'
 # The future was cancelled by the user...
 CANCELLED = 'CANCELLED'
-# ...and _Waiter.add_cancelled() was called by a worker.
-CANCELLED_AND_NOTIFIED = 'CANCELLED_AND_NOTIFIED'
 FINISHED = 'FINISHED'
 
 _FUTURE_STATES = [
     PENDING,
-    RUNNING,
     CANCELLED,
-    CANCELLED_AND_NOTIFIED,
     FINISHED
 ]
 
 _STATE_TO_DESCRIPTION_MAP = {
     PENDING: "pending",
-    RUNNING: "running",
     CANCELLED: "cancelled",
-    CANCELLED_AND_NOTIFIED: "cancelled",
     FINISHED: "finished"
 }
 
@@ -81,7 +74,6 @@ class Planned(object):
         """Initializes the future"""
         self._state = PENDING
         self._result = None
-        self._exception = None
         self._done_callbacks = []
 
     def _invoke_callbacks(self):
@@ -93,18 +85,11 @@ class Planned(object):
 
     def __repr__(self):  # pragma: no cover
         if self._state == FINISHED:
-            if self._exception:
-                return '<Planned at %s state=%s raised %s>' % (
-                    hex(id(self)),
-                    _STATE_TO_DESCRIPTION_MAP[self._state],
-                    self._exception.__class__.__name__,
-                )
-            else:
-                return '<Planned at %s state=%s returned %s>' % (
-                    hex(id(self)),
-                    _STATE_TO_DESCRIPTION_MAP[self._state],
-                    self._result.__class__.__name__,
-                )
+            return '<Planned at %s state=%s returned %s>' % (
+                hex(id(self)),
+                _STATE_TO_DESCRIPTION_MAP[self._state],
+                self._result.__class__.__name__,
+            )
         return '<Planned at %s state=%s>' % (
             hex(id(self)),
             _STATE_TO_DESCRIPTION_MAP[self._state]
@@ -116,10 +101,10 @@ class Planned(object):
         Returns True if the future was cancelled, False otherwise. A future
         cannot be cancelled if it is running or has already completed.
         """
-        if self._state in [RUNNING, FINISHED]:
+        if self._state in (FINISHED, ):
             return False
 
-        if self._state in [CANCELLED, CANCELLED_AND_NOTIFIED]:
+        if self._state in (CANCELLED, ):
             return True
 
         self._state = CANCELLED
@@ -128,21 +113,14 @@ class Planned(object):
 
     def cancelled(self):
         """Return True if the future was cancelled."""
-        return self._state in [CANCELLED, CANCELLED_AND_NOTIFIED]
-
-    def running(self):
-        """Return True if the future is currently executing."""
-        return self._state == RUNNING
+        return self._state in (CANCELLED, )
 
     def done(self):
         """Return True of the future was cancelled or finished executing."""
-        return self._state in [CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED]
+        return self._state in (CANCELLED, FINISHED, )
 
     def __get_result(self):
-        if self._exception:
-            raise self._exception
-        else:
-            return self._result
+        return self._result
 
     def add_done_callback(self, fn):
         """Attaches a callable that will be called when the future finishes.
@@ -154,7 +132,7 @@ class Planned(object):
                 callable will be called immediately. These
                 callables are called in the order that they were added.
         """
-        if self._state not in [CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED]:
+        if self._state not in (CANCELLED, FINISHED):
             self._done_callbacks.append(fn)
             return
         fn(self)
@@ -169,28 +147,12 @@ class Planned(object):
             CancelledError: If the future was cancelled.
             Exception: If the call raised then that exception will be raised.
         """
-        if self._state in [CANCELLED, CANCELLED_AND_NOTIFIED]:
+        if self._state in (CANCELLED, ):
             raise CancelledError()
         elif self._state == FINISHED:
             return self.__get_result()
         else:
             raise NotDoneYetError()
-
-    def exception(self):
-        """Return the exception raised by the call that the future represents.
-
-        Returns:
-            The exception raised by the call that the future represents or None
-            if the call completed without raising.
-
-        Raises:
-            CancelledError: If the future was cancelled.
-        """
-
-        if self._state in [CANCELLED, CANCELLED_AND_NOTIFIED]:
-            raise CancelledError()
-        elif self._state == FINISHED:
-            return self._exception
 
     def set_result(self, result):
         """Sets the return value of work associated with the future.

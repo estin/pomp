@@ -4,7 +4,7 @@
 
 
 .. _Scrapy: http://scrapy.org/
-.. _example sourcecode:
-   https://bitbucket.org/estin/pomp/src/tip/examples?at=default
+.. _example sourcecode: https://github.com/estin/pomp/tree/master/examples
+
 
 .. include:: contents.rst.inc

@@ -24,7 +24,7 @@ if sys.version_info > (3, 3):
 setup(
     name='pomp',
     version=about['__version__'],
-    url='http://bitbucket.org/estin/pomp',
+    url='https://github.com/estin/pomp',
     license='BSD',
     author='Evgeniy Tatarkin',
     author_email='tatarkin.evg@gmail.com',

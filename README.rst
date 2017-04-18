@@ -71,8 +71,7 @@ BSD license.
 .. _Scrapy: http://scrapy.org/
 .. _Twisted: http://twistedmatrix.com/
 .. _concurrent.futures: http://pythonhosted.org/futures/
-.. _Pomp examples:
-   https://bitbucket.org/estin/pomp/src/tip/examples?at=default
+.. _Pomp examples: https://github.com/estin/pomp/tree/master/examples
 .. _Pomp docs: http://pomp.readthedocs.org
 .. _Paste: http://pythonpaste.org/
 .. _requests: http://www.python-requests.org/en/latest/

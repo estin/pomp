@@ -137,8 +137,6 @@ class TestContribAsyncio(object):
         )
 
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(pomp.pump(Crawler()))
-
         loop.run_until_complete(pomp.pump(
             AioConcurrentCrawler(
                 worker_class=Crawler,

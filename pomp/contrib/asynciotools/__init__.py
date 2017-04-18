@@ -59,8 +59,7 @@ class AioPomp(SyncPomp):
 
         while True:
 
-            # pre-lock
-            if self.queue_lock:
+            if self.queue_lock and self.queue_semaphore_value <= 0:
                 await self.queue_lock.acquire()
 
             next_requests = await self.queue.get_requests(
@@ -80,14 +79,6 @@ class AioPomp(SyncPomp):
             task.add_done_callback(
                 partial(_on_iterations_task_done, task)
             )
-
-            # block loop if requests in process more than downloader
-            # can fetch
-            if self.queue_lock:
-                if self.queue_semaphore_value <= 0:
-                    await self.queue_lock.acquire()
-                elif self.queue_lock.locked():
-                    self.queue_lock.release()
 
         # loop ended, but we have pending tasks - wait
         if _pending_iteration_tasks:

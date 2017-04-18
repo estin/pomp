@@ -256,8 +256,7 @@ class Pomp(BaseEngine):
 
         while True:
 
-            # pre-lock
-            if self.queue_lock:
+            if self.queue_lock and self.queue_semaphore_value <= 0:
                 self.queue_lock.acquire(True)
 
             next_requests = self.queue.get_requests(
@@ -270,14 +269,6 @@ class Pomp(BaseEngine):
             self.process_requests(
                 iterator(next_requests), crawler,
             )
-
-            # block loop if requests in process more than downloader
-            # can fetch
-            if self.queue_lock:
-                if self.queue_semaphore_value <= 0:
-                    self.queue_lock.acquire(True)
-                elif self.queue_lock.locked():
-                    self.queue_lock.release()
 
         self.finish(crawler)
 

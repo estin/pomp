@@ -55,16 +55,24 @@ class AiohttpAdapterMiddleware(BaseMiddleware):
 
 
 class AiohttpDownloader(BaseDownloader):
+
+    def prepare(self):
+        log.debug("[AiohttpDownloader] Start session")
+        self.session = aiohttp.ClientSession()
+
+    def stop(self):
+        log.debug("[AiohttpDownloader] Close session")
+        self.session.close()
+
     async def _fetch(self, request, future):
         log.debug("[AiohttpDownloader] Start fetch: %s", request.url)
-        async with aiohttp.ClientSession() as session:
-            async with session.get(request.url) as response:
-                body = await response.text()
-                log.debug(
-                    "[AiohttpDownloader] Done %s: %s %s",
-                    request.url, len(body), body[0:20],
-                )
-                future.set_result(AiohttpResponse(request, body))
+        async with self.session.get(request.url) as response:
+            body = await response.text()
+            log.debug(
+                "[AiohttpDownloader] Done %s: %s %s",
+                request.url, len(body), body[0:20],
+            )
+            future.set_result(AiohttpResponse(request, body))
 
     def get_workers_count(self):
         return 2

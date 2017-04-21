@@ -1,6 +1,7 @@
 import sys
 import types
 import logging
+import inspect
 import itertools
 
 
@@ -24,6 +25,28 @@ def isstring(obj):
     if not PY3:
         return isinstance(obj, basestring)  # noqa
     return isinstance(obj, str)
+
+
+def switch_to_asyncio(method, skip_spaces=4):
+    for line in inspect.getsourcelines(method)[0]:
+        if '# asyncio:' not in line:
+            yield line[skip_spaces:]
+        else:
+            indent = ' ' * (len(line) - len(line.lstrip()))
+            line = line.replace('# noqa', '').strip()
+            line, directive = line.split('# asyncio:')
+            if 'REPLACE' in directive:
+                yield '{0}{1} # by: {2}'.format(
+                    indent,
+                    directive.replace("REPLACE", line.strip()).strip(),
+                    directive,
+                )[skip_spaces:]
+            else:
+                yield '{0}{1} {2} # by: {1}'.format(
+                    indent,
+                    directive.strip(),
+                    line.strip(),
+                )[skip_spaces:]
 
 
 # Planned like Future

@@ -1,6 +1,8 @@
 import pytest
 
-from pomp.core.utils import iterator, Planned, CancelledError, NotDoneYetError
+from pomp.core.utils import (
+    iterator, switch_to_asyncio, Planned, CancelledError, NotDoneYetError,
+)
 
 
 def test_iterator():
@@ -43,3 +45,21 @@ def test_planned():
 
     with pytest.raises(CancelledError):
         planned.result()
+
+
+def test_switch_to_asyncio():
+
+    def method():  # asyncio: async
+        # asyncio: future = dict()
+        x()  # asyncio: y(REPLACE)  # noqa
+        z()  # asyncio: await  # noqa
+
+    result = '\n'.join(switch_to_asyncio(method))
+    TO_CHECK = (
+        'async def method()',
+        'future = dict()',
+        'y(x())',
+        'await z()',
+    )
+    for check in TO_CHECK:
+        assert check in result

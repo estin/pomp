@@ -1,4 +1,4 @@
-import sys
+import sys  # noqa
 import logging
 import asyncio
 from functools import partial
@@ -7,11 +7,11 @@ from functools import partial
 try:
     from asyncio import ensure_future
 except ImportError:  # pragma: no cover
-    from asyncio import async as ensure_future
+    from asyncio import async as ensure_future  # noqa
 
 
-from pomp.core.base import BaseQueue, BaseCrawlException
-from pomp.core.utils import iterator, Planned
+from pomp.core.base import BaseQueue, BaseCrawlException  # noqa
+from pomp.core.utils import iterator, switch_to_asyncio, Planned
 from pomp.core.engine import StopCommand
 from pomp.core.engine import Pomp as SyncPomp
 
@@ -90,121 +90,19 @@ class AioPomp(SyncPomp):
 
         self.finish(crawler)
 
-    async def process_requests(self, requests, crawler):
-
-        # execute requests by downloader
-        for response in self.downloader.process(
-                # process requests by middlewares
-                self._req_middlewares(requests, crawler), crawler):
-
-            if response is None:
-                # response was rejected by middlewares
-                pass
-
-            elif isinstance(response, Planned):
-                future = asyncio.Future()
-
-                def _(r):
-                    response = r.result()
-                    ensure_future(
-                        # put new requests to queue
-                        self._put_requests(
-                            # process response by crawler
-                            self.response_callback(
-                                crawler,
-                                # pass response to middlewares
-                                self._resp_middlewares(response, crawler),
-                            ),
-                            response,
-                            crawler,
-                        )
-                    ).add_done_callback(
-                        future.set_result
-                    )
-
-                response.add_done_callback(_)
-
-                await future
-            else:
-                # put new requests to queue
-                await self._put_requests(
-                    # process response by crawler
-                    self.response_callback(
-                        crawler,
-                        # pass response to middlewares
-                        self._resp_middlewares(response, crawler),
-                    ),
-                    response,
-                    crawler,
-                )
-
-    async def _put_requests(
-            self, requests, response=None, crawler=None, request_done=True):
-
-        async def _put(items):
-
-            if items:
-                for item in items:
-                    self.in_progress += 1
-                    await self.queue.put_requests(item)
-
-            if request_done:
-                await self._request_done(response, crawler)
-
-        if isinstance(requests, Planned):
-            future = asyncio.Future()
-
-            def _(r):
-                ensure_future(
-                    _put(r.result())
-                ).add_done_callback(
-                    future.set_result
-                )
-
-            requests.add_done_callback(_)
-
-            await future
-        else:
-            await _put(requests)
-
-    async def _request_done(self, response, crawler):
-        if self.queue_lock:
-            # increment counter, but not more then workers count
-            self.queue_semaphore_value = min(
-                self.workers_count,
-                self.queue_semaphore_value + 1,
-            )
-            if self.queue_semaphore_value > 0 and self.queue_lock.locked():
-                self.queue_lock.release()
-
-        self.in_progress -= 1
-
-        # send StopCommand if all jobs are done and running on internal queue
-        if self._is_internal_queue and self.in_progress == 0:
-            # work done
-            await self.queue.put_requests(StopCommand())
-
-        # response processing complete
-        try:
-            crawler.on_processing_done(response)
-        except Exception as e:
-            log.exception("On done processing exception")
-            self._exception_middlewares(
-                BaseCrawlException(
-                    request=response.request,
-                    response=response,
-                    exception=e,
-                    exc_info=sys.exc_info(),
-                ),
-                crawler,
-            )
-
     def get_queue_lock(self):
         workers_count = self.downloader.get_workers_count()
         if workers_count >= 1:
             self.queue_semaphore_value = workers_count
             self.workers_count = workers_count
             return asyncio.Lock()
+
+    # some kind of python magic
+    # read SyncPomp.* sources, add async/await/adapters by `# asyncio: `
+    # directive and inject to this class as native methods
+    exec('\n'.join(switch_to_asyncio(SyncPomp.process_requests)))
+    exec('\n'.join(switch_to_asyncio(SyncPomp._put_requests)))
+    exec('\n'.join(switch_to_asyncio(SyncPomp._request_done)))
 
 
 class AioConcurrentCrawler(ConcurrentCrawler):

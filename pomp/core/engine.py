@@ -150,7 +150,7 @@ class Pomp(BaseEngine):
         else:
             return self.on_parse_result(crawler, result, response)
 
-    def process_requests(self, requests, crawler):
+    def process_requests(self, requests, crawler):  # asyncio: async
 
         # execute requests by downloader
         for response in self.downloader.process(
@@ -162,24 +162,29 @@ class Pomp(BaseEngine):
                 pass
 
             elif isinstance(response, Planned):  # async behaviour
+                # asyncio: future = asyncio.Future()
                 def _(r):
                     # put new requests to queue
                     response = r.result()
-                    self._put_requests(
-                        # process response by crawler
-                        self.response_callback(
-                            crawler,
-                            # pass response to middlewares
-                            self._resp_middlewares(response, crawler),
-                        ),
-                        response=response,
-                        crawler=crawler,
-                    )
-                response.add_done_callback(_)
 
+                    # TODO: remove x
+                    def x():  # asyncio: async
+                        self._put_requests(  # asyncio: await
+                            # process response by crawler
+                            self.response_callback(
+                                crawler,
+                                # pass response to middlewares
+                                self._resp_middlewares(response, crawler),
+                            ),
+                            response=response,
+                            crawler=crawler,
+                        )
+                    x() # asyncio: ensure_future(REPLACE).add_done_callback(future.set_result)  # noqa
+                response.add_done_callback(_)
+                # asyncio: await future
             else:  # sync behavior
                 # put new requests to queue
-                self._put_requests(
+                self._put_requests(  # asyncio: await
                     # process response by crawler
                     self.response_callback(
                         crawler,
@@ -408,25 +413,26 @@ class Pomp(BaseEngine):
                 )
         return value
 
-    def _put_requests(
-            self, requests, response=None, crawler=None, request_done=True):
+    def _put_requests( self, requests, response=None, crawler=None, request_done=True):  # asyncio: async  # noqa
 
-        def _put(items):
+        def _put(items):  # asyncio: async
             if items:
                 for item in items:
                     self.in_progress += 1
-                    self.queue.put_requests(item)
+                    self.queue.put_requests(item)  # asyncio: await
             if request_done:
-                self._request_done(response, crawler)
+                self._request_done(response, crawler)  # asyncio: await
 
         if isinstance(requests, Planned):
+            # asyncio: future = asyncio.Future()
             def _(r):
-                _put(r.result())
+                _put(r.result())  # asyncio: ensure_future(REPLACE).add_done_callback(future.set_result)  # noqa
             requests.add_done_callback(_)
+            # asyncio: await future
         else:
-            _put(requests)
+            _put(requests)  # asyncio: await
 
-    def _request_done(self, response, crawler):
+    def _request_done(self, response, crawler):  # asyncio: async
         if self.queue_lock:
             # increment counter, but not more then workers count
             self.queue_semaphore_value = min(
@@ -441,7 +447,7 @@ class Pomp(BaseEngine):
         # send StopCommand if all jobs are done and running on internal queue
         if self._is_internal_queue and self.in_progress == 0:
             # work done
-            self.queue.put_requests(StopCommand())
+            self.queue.put_requests(StopCommand())  # asyncio: await
 
         # response processing complete
         try:

@@ -37,6 +37,7 @@ class SimpleAsyncioQueue(BaseQueue):
 
 class AioPomp(SyncPomp):
     DEFAULT_QUEUE_CLASS = SimpleAsyncioQueue
+    LOCK_FACTORY = asyncio.Lock
 
     async def pump(self, crawler):
         """Start crawling
@@ -89,13 +90,6 @@ class AioPomp(SyncPomp):
             await asyncio.wait(_pending_iteration_tasks)
 
         self.finish(crawler)
-
-    def get_queue_lock(self):
-        workers_count = self.downloader.get_workers_count()
-        if workers_count >= 1:
-            self.queue_semaphore_value = workers_count
-            self.workers_count = workers_count
-            return asyncio.Lock()
 
     # some kind of python magic
     # read SyncPomp.* sources, add async/await/adapters by `# asyncio: `

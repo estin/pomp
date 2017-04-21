@@ -59,6 +59,7 @@ class Pomp(BaseEngine):
                           queue only
     """
     DEFAULT_QUEUE_CLASS = SimpleQueue
+    LOCK_FACTORY = threading.Lock
 
     def __init__(
             self, downloader, middlewares=None, pipelines=None,
@@ -282,7 +283,7 @@ class Pomp(BaseEngine):
         if workers_count >= 1:
             self.workers_count = workers_count
             self.queue_semaphore_value = workers_count
-            return threading.Lock()
+            return self.LOCK_FACTORY()
 
     def _process_items(self, crawler, items, response=None):
 

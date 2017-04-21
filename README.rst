@@ -1,33 +1,29 @@
 Pomp
 ====
 
-.. image:: https://img.shields.io/circleci/project/github/estin/pomp/master.png
+.. image:: https://img.shields.io/circleci/project/github/estin/pomp/master.svg
     :target: https://circleci.com/gh/estin/pomp/tree/master
     :alt: circleci
 
-.. image:: https://img.shields.io/codecov/c/github/estin/pomp/master.png
+.. image:: https://img.shields.io/codecov/c/github/estin/pomp/master.svg
     :target: https://codecov.io/gh/estin/pomp/branch/master
     :alt: codecov
 
-.. image:: https://img.shields.io/pypi/v/pomp.png
+.. image:: https://img.shields.io/pypi/v/pomp.svg
     :target: https://pypi.python.org/pypi/pomp/
     :alt: Latest PyPI version
 
-.. image:: https://img.shields.io/pypi/dm/pomp.png
-    :target: https://pypi.python.org/pypi/pomp/
-    :alt: Number of PyPI downloads
+.. image:: https://img.shields.io/pypi/pyversions/pomp.svg
+    :target: https://pypi.python.org/pypi/pomp
+    :alt: python versions
 
-.. image:: https://img.shields.io/pypi/wheel/pomp.png
+.. image:: https://img.shields.io/pypi/wheel/pomp.svg
     :target: https://pypi.python.org/pypi/pomp/
     :alt: Have wheel
 
-.. image:: https://img.shields.io/pypi/l/pomp.png
+.. image:: https://img.shields.io/pypi/l/pomp.svg
     :target: https://pypi.python.org/pypi/pomp/
     :alt: License
-
-.. image:: https://readthedocs.org/projects/pomp/badge/?version=latest
-    :target: https://readthedocs.org/projects/pomp/?badge=latest
-    :alt: Documentation Status
 
 ----------
 

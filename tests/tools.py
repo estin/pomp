@@ -28,8 +28,11 @@ class DummyCrawler(BaseCrawler):
     def extract_items(self, response):
         item = DummyItem()
         item.value = 1
-        item.url = response.request.url
+        item.url = response.get_request().url
         yield item
+
+    def on_processing_done(self, response):
+        pass
 
 
 class DummyDownloader(BaseDownloader):
@@ -103,8 +106,7 @@ class DummyResponse(BaseHttpResponse):
         self.req = request
         self.resp = response
 
-    @property
-    def request(self):
+    def get_request(self):
         return self.req
 
     def __repr__(self):

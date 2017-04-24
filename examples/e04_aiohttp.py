@@ -16,9 +16,11 @@ except ImportError:
 import aiohttp
 
 from pomp.core.base import (
-    BaseHttpRequest, BaseHttpResponse, BaseDownloader,
+    BaseHttpRequest,
+    BaseHttpResponse,
+    BaseDownloader,
+    BaseCrawlException,
 )
-from pomp.core.utils import Planned
 
 
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
@@ -35,47 +37,45 @@ class AiohttpRequest(BaseHttpRequest):
 
 class AiohttpResponse(BaseHttpResponse):
     def __init__(self, request, body):
-        self.req = request
+        self.request = request
         self.body = body
 
-    @property
-    def request(self):
-        return self.req
+    def get_request(self):
+        return self.request
 
 
 class AiohttpDownloader(BaseDownloader):
 
-    def prepare(self):
+    def start(self, crawler):
         log.debug("[AiohttpDownloader] Start session")
         self.session = aiohttp.ClientSession()
 
-    def stop(self):
+    def stop(self, crawler):
         log.debug("[AiohttpDownloader] Close session")
         self.session.close()
 
-    async def _fetch(self, request, future):
+    async def _fetch(self, request):
         log.debug("[AiohttpDownloader] Start fetch: %s", request.url)
-        async with self.session.get(request.url) as response:
-            body = await response.text()
-            log.debug(
-                "[AiohttpDownloader] Done %s: %s %s",
-                request.url, len(body), body[0:20],
+        try:
+            async with self.session.get(request.url) as response:
+                body = await response.text()
+                log.debug(
+                    "[AiohttpDownloader] Done %s: %s %s",
+                    request.url, len(body), body[0:20],
+                )
+                return AiohttpResponse(request, body)
+        except Exception as e:
+            log.exception("[AiohttpDownloader] exception on %s", request)
+            return BaseCrawlException(
+                request=request,
+                response=None,
+                exception=e,
+                exc_info=sys.exc_info(),
             )
-            future.set_result(AiohttpResponse(request, body))
 
     def get(self, requests):
         for request in requests:
-
-            future = asyncio.Future()
-            ensure_future(self._fetch(request, future))
-
-            planned = Planned()
-
-            def build_response(f):
-                planned.set_result(f.result())
-            future.add_done_callback(build_response)
-
-            yield planned
+            yield ensure_future(self._fetch(request))
 
 
 if __name__ == '__main__':

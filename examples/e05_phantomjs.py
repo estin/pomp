@@ -46,12 +46,11 @@ class PhantomRequest(BaseHttpRequest):
 
 class PhantomResponse(BaseHttpResponse):
     def __init__(self, request, body):
-        self.req = request
+        self.request = request
         self.body = body
 
-    @property
-    def request(self):
-        return self.req
+    def get_request(self):
+        return self.request
 
 
 class PhantomDownloadWorker(BaseDownloadWorker):
@@ -96,8 +95,8 @@ class PhantomDownloadWorker(BaseDownloadWorker):
 
 class PhantomDownloader(ConcurrentDownloader):
 
-    def prepare(self, *args, **kwargs):
-        super(PhantomDownloader, self).prepare(*args, **kwargs)
+    def start(self, *args, **kwargs):
+        super(PhantomDownloader, self).start(*args, **kwargs)
 
         # start phanomjs nodes
         self.drivers = collections.deque([
@@ -117,7 +116,7 @@ class PhantomDownloader(ConcurrentDownloader):
             map(_associate_driver_url, requests)
         )
 
-    def stop(self):
+    def stop(self, *args, **kwargs):
         super(PhantomDownloader, self).stop()
         log.debug("close all phantomjs nodes")
         for driver in self.drivers:
@@ -173,8 +172,8 @@ class TwitterSpider(BaseCrawler):
             yield tw
 
         # go to also likes users
-        self._parsed_also_likes.append(response.request.url)
-        level = getattr(response.request, 'level', 0)
+        self._parsed_also_likes.append(response.get_request().url)
+        level = getattr(response.get_request(), 'level', 0)
         # do not go deeper then 3 level
         if level < 3:
             # follow to the first two persons from `also likes`

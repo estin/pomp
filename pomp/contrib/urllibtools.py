@@ -74,14 +74,13 @@ class UrllibHttpResponse(BaseHttpResponse):
     :class:`pomp.core.base.BaseHttpResponse`"""
 
     def __init__(self, request, response):
-        self.req = request
+        self.request = request
 
         if not isinstance(response, Exception):
             self.body = response.read()
 
-    @property
-    def request(self):
-        return self.req
+    def get_request(self):
+        return self.request
 
     def __str__(self):
         return '<UrllibHttpResponse on {s.request}>'.format(s=self)

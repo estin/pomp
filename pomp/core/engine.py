@@ -4,15 +4,18 @@ Engine
 import sys
 import types
 import logging
-import itertools
 import threading
 
 from pomp.core.base import (
-    BaseEngine, BaseCommand, BaseQueue, BaseHttpRequest, BaseCrawlException,
+    BaseEngine,
+    BaseCommand,
+    BaseQueue,
+    BaseRequest,
+    BaseResponse,
+    BaseHttpResponse,
+    BaseCrawlException,
 )
-from pomp.core.utils import (
-    iterator, isstring,  Planned,
-)
+from pomp.core.utils import iterator, isstring
 
 try:
     import Queue as queue
@@ -81,15 +84,17 @@ class Pomp(BaseEngine):
             self.queue, self.DEFAULT_QUEUE_CLASS,
         )
 
-    def response_callback(self, crawler, response):
+    def response_callback(self, crawler, response):  # asyncio: async
         try:
             if not isinstance(response, BaseCrawlException):
-                return self.on_response(crawler, response)
+                self.on_response(crawler, response)  # asyncio: await
+            else:
+                self._request_done(response, crawler)  # asyncio: await
         except Exception as e:
             log.exception("On response processing")
-            self._exception_middlewares(
+            self._exception_middlewares(  # asyncio: await
                 BaseCrawlException(
-                    request=response.request,
+                    request=response.get_request(),
                     response=response,
                     exception=e,
                     exc_info=sys.exc_info(),
@@ -97,113 +102,105 @@ class Pomp(BaseEngine):
                 crawler,
             )
 
-    def on_parse_result(self, crawler, result, response):
-        requests_from_items = ()
+    def on_parse_result(self, crawler, result, response):  # asyncio: async
         if isinstance(result, types.GeneratorType):
             for items in result:
-                requests_from_items = itertools.chain(
-                    requests_from_items,
-                    self._process_items(
-                        crawler, iterator(items), response=response,
+                for request in self._process_items(crawler, iterator(items), response=response):  # asyncio: async  # noqa
+                    self._put_requests(   # asyncio: await
+                        iterator(request),
+                        crawler=crawler,
+                        response=response,
                     )
+        else:
+            for request in self._process_items(crawler, iterator(result), response=response):  # asyncio: async  # noqa
+                self._put_requests(   # asyncio: await
+                    iterator(request),
+                    crawler=crawler,
+                    response=response,
+                )
+
+        next_requests = (
+            crawler.next_requests(response)  # asyncio: await _co(REPLACE)
+        )
+
+        if hasattr(next_requests, '__anext__'):  # support async generators
+            for request in next_requests:  # asyncio: async
+                self._put_requests(  # asyncio: await
+                    iterator(request),
+                    crawler=crawler,
+                    response=response,
                 )
         else:
-            requests_from_items = self._process_items(
-                crawler, iterator(result), response=response,
+            self._put_requests(  # asyncio: await
+                iterator(next_requests),
+                crawler=crawler,
+                response=response,
             )
 
-        next_requests = crawler.next_requests(response)
+        self._request_done(response, crawler)  # asyncio: await
 
-        if requests_from_items:
-            if next_requests:
-                # chain result of crawler extract_items
-                # and next_requests methods
-                next_requests = itertools.chain(
-                    requests_from_items,
-                    iterator(next_requests),
-                )
-            else:
-                next_requests = requests_from_items
+    def on_response(self, crawler, response):  # asyncio: async
 
-        return next_requests
+        try:
+            result = crawler.process(response)  # asyncio: await _co(REPLACE)
+        except Exception as e:
+            self._exception_middlewares(e, crawler)  # asyncio: await
+            result = None
 
-    def on_response(self, crawler, response):
-
-        result = crawler.process(response)
-
-        if isinstance(result, Planned):
-            planned = Planned()
+        if hasattr(result, 'add_done_callback'):  # if Planned or Future object
 
             def _(r):
                 result = r.result()
-
                 if isinstance(result, BaseCrawlException):
-                    self._exception_middlewares(result, crawler)
-                    planned.set_result(None)
+                    def x():  # asyncio: async
+                        self._exception_middlewares(result, crawler)  # asyncio: await  # noqa
+                        self._request_done(response, crawler)  # asyncio: await  # noqa
+                    x()  # asyncio: ensure_future(REPLACE)
                 else:
-                    planned.set_result(
-                        self.on_parse_result(crawler, result, response)
-                    )
+                    self.on_parse_result(crawler, result, response)  # asyncio: ensure_future(REPLACE)  # noqa
 
             result.add_done_callback(_)
-            return planned
 
         else:
-            return self.on_parse_result(crawler, result, response)
+            self.on_parse_result(crawler, result, response)  # asyncio: await
 
     def process_requests(self, requests, crawler):  # asyncio: async
 
-        # execute requests by downloader
-        for response in self.downloader.process(
-                # process requests by middlewares
-                self._req_middlewares(requests, crawler), crawler):
+        # process requests by middlewares
+        for request in self._req_middlewares(requests, crawler):  # asyncio: async  # noqa
 
-            if response is None:
-                # response was rejected by middlewares
-                pass
+            if isinstance(request, BaseCrawlException):
+                self._resp_middlewares(request, crawler)  # asyncio: await
+                continue
 
-            elif isinstance(response, Planned):  # async behaviour
-                # asyncio: future = asyncio.Future()
-                def _(r):
-                    # put new requests to queue
-                    response = r.result()
-
-                    # TODO: remove x
-                    def x():  # asyncio: async
-                        self._put_requests(  # asyncio: await
-                            # process response by crawler
-                            self.response_callback(
-                                crawler,
-                                # pass response to middlewares
-                                self._resp_middlewares(response, crawler),
-                            ),
-                            response=response,
-                            crawler=crawler,
-                        )
-                    x() # asyncio: ensure_future(REPLACE).add_done_callback(future.set_result)  # noqa
-                response.add_done_callback(_)
-                # asyncio: await future
-            else:  # sync behavior
-                # put new requests to queue
-                self._put_requests(  # asyncio: await
+            # execute requests by downloader
+            for response in self.downloader.get(iterator(request)):
+                if response is None:
+                    # response was rejected by middlewares
+                    pass
+                elif isinstance(response, (BaseResponse, BaseCrawlException)):
                     # process response by crawler
-                    self.response_callback(
+                    self.response_callback(  # asyncio: await
                         crawler,
                         # pass response to middlewares
-                        self._resp_middlewares(response, crawler),
-                    ),
-                    response=response,
-                    crawler=crawler,
-                )
+                        self._resp_middlewares(response, crawler)  # asyncio: await  # noqa
+                    )
+                else:  # async behaviour
+                    def _(r):
+                        def x():  # asyncio: async
+                            response = self._resp_middlewares(r.result(), crawler)  # asyncio: await  # noqa
+                            self.response_callback(crawler, response)  # asyncio: ensure_future(REPLACE) # noqa
+                        x()  # asyncio: ensure_future(REPLACE)
+                    response.add_done_callback(_)
 
-    def prepare(self, crawler):
+    def prepare(self, crawler):  # asyncio: async
         # prepare middleware chain
         self.request_middlewares = self.middlewares
         self.response_middlewares = self.middlewares[:]
         self.response_middlewares.reverse()
 
         log.info('Prepare downloader: %s', self.downloader)
-        self.downloader.prepare()
+        self.downloader.start(crawler)  # asyncio: await _co(REPLACE)
         self.in_progress = 0
 
         log.info('Start crawler: %s', crawler)
@@ -211,10 +208,10 @@ class Pomp(BaseEngine):
         for pipe in self.pipelines:
             log.info('Start pipe: %s', pipe)
             try:
-                pipe.start(crawler)
+                pipe.start(crawler)  # asyncio: await _co(REPLACE)
             except Exception as e:
                 log.exception("On pipe start")
-                self._exception_middlewares(
+                self._exception_middlewares(  # asyncio: await
                     BaseCrawlException(
                         request=None,
                         response=None,
@@ -227,15 +224,27 @@ class Pomp(BaseEngine):
         # configure queue semaphore
         self.queue_lock = self.get_queue_lock()
 
-    def finish(self, crawler):
-        self.downloader.stop()
+    def finish(self, crawler):  # asyncio: async
+        try:
+            self.downloader.stop(crawler)  # asyncio: await _co(REPLACE)
+        except Exception as e:
+            log.exception("On downloader stop")
+            self._exception_middlewares(  # asyncio: await
+                BaseCrawlException(
+                    request=None,
+                    response=None,
+                    exception=e,
+                    exc_info=sys.exc_info(),
+                ),
+                crawler,
+            )
         for pipe in self.pipelines:
             log.info('Stop pipe: %s', pipe)
             try:
-                pipe.stop(crawler)
+                pipe.stop(crawler)  # asyncio: await _co(REPLACE)
             except Exception as e:
                 log.exception("On pipe stop")
-                self._exception_middlewares(
+                self._exception_middlewares(  # asyncio: await
                     BaseCrawlException(
                         request=None,
                         response=None,
@@ -257,7 +266,7 @@ class Pomp(BaseEngine):
         next_requests = getattr(crawler, 'ENTRY_REQUESTS', None)
         if next_requests:
             self._put_requests(
-                iterator(next_requests), None, request_done=False,
+                iterator(next_requests), None,
             )
 
         while True:
@@ -285,7 +294,7 @@ class Pomp(BaseEngine):
             self.queue_semaphore_value = workers_count
             return self.LOCK_FACTORY()
 
-    def _process_items(self, crawler, items, response=None):
+    def _process_items(self, crawler, items, response=None):  # asyncio: async
 
         for item in items:
 
@@ -293,18 +302,18 @@ class Pomp(BaseEngine):
                 continue
 
             # yield item as request
-            if isinstance(item, BaseHttpRequest) or isstring(item):
+            if isinstance(item, BaseRequest) or isstring(item):
                 yield item
             else:
                 # proccess item as data item by pipes
                 for pipe in self.pipelines:
                     try:
-                        item = pipe.process(crawler, item)
+                        item = pipe.process(crawler, item)  # asyncio: await _co(REPLACE)  # noqa
                     except Exception as e:
                         log.exception("On pipe process")
-                        self._exception_middlewares(
+                        self._exception_middlewares(  # asyncio: await
                             BaseCrawlException(
-                                request=response.request,
+                                request=response.get_request(),
                                 response=response,
                                 exception=e,
                                 exc_info=sys.exc_info(),
@@ -320,7 +329,7 @@ class Pomp(BaseEngine):
                             )
                             break
 
-    def _req_middlewares(self, requests, crawler):
+    def _req_middlewares(self, requests, crawler):  # asyncio: async
         # pass requests to middlewares
         for request in requests:
 
@@ -330,11 +339,7 @@ class Pomp(BaseEngine):
 
             for middleware in self.request_middlewares:
                 try:
-                    request = middleware.process_request(
-                        request,
-                        crawler,
-                        self.downloader,
-                    )
+                    request = middleware.process_request(request, crawler, self.downloader)  # asyncio: await _co(REPLACE) # noqa
                 except Exception as e:
                     log.exception(
                         'Exception on process %s by %s', request, middleware)
@@ -357,27 +362,27 @@ class Pomp(BaseEngine):
                         "Stop request processing. Middleware %s on %s",
                         middleware, request,
                     )
+                    self._request_done(None, crawler)  # asyncio: await
                     break
 
             if request:
                 yield request
 
-    def _resp_middlewares(self, response, crawler):
+    def _resp_middlewares(self, response, crawler):  # asyncio: async
         # pass response to middlewares
         is_error = isinstance(response, BaseCrawlException)
         func = 'process_response' if not is_error else 'process_exception'
 
         for middleware in self.response_middlewares:
             try:
-                value = getattr(middleware, func)(
-                    response, crawler, self.downloader,
-                )
+                value = getattr(middleware, func)(response, crawler, self.downloader)  # asyncio: await _co(REPLACE) # noqa
             except Exception as e:
                 log.exception(
-                    'Exception on process %s by %s', response, middleware)
-                response = self._exception_middlewares(
+                    'Exception on process %s by %s', response, middleware,
+                )
+                response = self._exception_middlewares(  # asyncio: await
                     BaseCrawlException(
-                        request=response.request,
+                        request=response.get_request() if isinstance(response, BaseHttpResponse) else None,  # noqa
                         response=response,
                         exception=e,
                         exc_info=sys.exc_info(),
@@ -390,18 +395,17 @@ class Pomp(BaseEngine):
                     "Stop response processing. Middleware %s on %s",
                     middleware, response,
                 )
+                self._request_done(response, crawler)  # asyncio: await
                 break
             response = value
 
         return response
 
-    def _exception_middlewares(self, exception, crawler):
+    def _exception_middlewares(self, exception, crawler):  # asyncio: async
         value = None
         for middleware in self.response_middlewares:
             try:
-                value = middleware.process_exception(
-                    exception, crawler, self.downloader,
-                )
+                value = middleware.process_exception(exception, crawler, self.downloader)  # asyncio: await _co(REPLACE)  # noqa
                 if value is None:  # stop processing exception
                     log.debug(
                         "Stop exception processing. Middleware %s on %s",
@@ -414,22 +418,26 @@ class Pomp(BaseEngine):
                 )
         return value
 
-    def _put_requests( self, requests, response=None, crawler=None, request_done=True):  # asyncio: async  # noqa
+    def _put_requests(self, requests, response=None, crawler=None):  # asyncio: async  # noqa
 
         def _put(items):  # asyncio: async
-            if items:
-                for item in items:
-                    self.in_progress += 1
-                    self.queue.put_requests(item)  # asyncio: await
-            if request_done:
-                self._request_done(response, crawler)  # asyncio: await
+            if not items:
+                return
+            for item in items:
+                if not item:
+                    continue
+                self.in_progress += 1
+                self.queue.put_requests(item)  # asyncio: await _co(REPLACE)
 
-        if isinstance(requests, Planned):
-            # asyncio: future = asyncio.Future()
+        if hasattr(requests, 'add_done_callback'):
+            # "hold" engine and wait future/planned
+            self.in_progress += 1
+
             def _(r):
-                _put(r.result())  # asyncio: ensure_future(REPLACE).add_done_callback(future.set_result)  # noqa
+                self.in_progress -= 1
+                _put(r.result())  # asyncio: ensure_future(REPLACE)
+
             requests.add_done_callback(_)
-            # asyncio: await future
         else:
             _put(requests)  # asyncio: await
 
@@ -452,12 +460,12 @@ class Pomp(BaseEngine):
 
         # response processing complete
         try:
-            crawler.on_processing_done(response)
+            crawler.on_processing_done(response)  # asyncio: await _co(REPLACE)
         except Exception as e:
             log.exception("On done processing exception")
-            self._exception_middlewares(
+            self._exception_middlewares(  # asyncio: await
                 BaseCrawlException(
-                    request=response.request,
+                    request=response.get_request(),
                     response=response,
                     exception=e,
                     exc_info=sys.exc_info(),

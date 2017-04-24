@@ -53,6 +53,9 @@ def test_switch_to_asyncio():
         # asyncio: future = dict()
         x()  # asyncio: y(REPLACE)  # noqa
         z()  # asyncio: await  # noqa
+        l = m()  # asyncio: await  # noqa
+        i = l()  # asyncio: await _co(REPLACE) # noqa
+        return k()  # asyncio: await  # noqa
 
     result = '\n'.join(switch_to_asyncio(method))
     TO_CHECK = (
@@ -60,6 +63,9 @@ def test_switch_to_asyncio():
         'future = dict()',
         'y(x())',
         'await z()',
+        'l = await m()',
+        'i = await _co(l())',
+        'return await k()',
     )
     for check in TO_CHECK:
         assert check in result

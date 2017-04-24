@@ -1,6 +1,8 @@
-import sys  # noqa
+import sys
+import types  # noqa
 import logging
 import asyncio
+import inspect
 from functools import partial
 
 
@@ -10,14 +12,26 @@ except ImportError:  # pragma: no cover
     from asyncio import async as ensure_future  # noqa
 
 
-from pomp.core.base import BaseQueue, BaseCrawlException  # noqa
-from pomp.core.utils import iterator, switch_to_asyncio, Planned
+from pomp.core.base import (  # noqa
+    BaseQueue,
+    BaseRequest,
+    BaseResponse,
+    BaseHttpResponse,
+    BaseCrawlException,
+)
+from pomp.core.utils import iterator, switch_to_asyncio, isstring  # noqa
 from pomp.core.engine import StopCommand
 from pomp.core.engine import Pomp as SyncPomp
 
 from pomp.contrib.concurrenttools import (
     _run_crawler_worker, ConcurrentCrawler,
 )
+
+
+async def _co(value):
+    if inspect.iscoroutine(value):
+        return await value
+    return value
 
 
 log = logging.getLogger(__name__)
@@ -44,14 +58,12 @@ class AioPomp(SyncPomp):
 
         :param crawler: isntance of :class:`pomp.core.base.BaseCrawler`
         """
-        self.prepare(crawler)
+        await self.prepare(crawler)
 
         # add ENTRY_REQUESTS to the queue
         next_requests = getattr(crawler, 'ENTRY_REQUESTS', None)
         if next_requests:
-            await self._put_requests(
-                iterator(next_requests), request_done=False,
-            )
+            await self._put_requests(iterator(next_requests))
 
         _pending_iteration_tasks = []
 
@@ -89,34 +101,39 @@ class AioPomp(SyncPomp):
             )
             await asyncio.wait(_pending_iteration_tasks)
 
-        self.finish(crawler)
+        await self.finish(crawler)
 
     # some kind of python magic
     # read SyncPomp.* sources, add async/await/adapters by `# asyncio: `
     # directive and inject to this class as native methods
+    exec('\n'.join(switch_to_asyncio(SyncPomp.prepare)))
     exec('\n'.join(switch_to_asyncio(SyncPomp.process_requests)))
-    exec('\n'.join(switch_to_asyncio(SyncPomp._put_requests)))
+    exec('\n'.join(switch_to_asyncio(SyncPomp.response_callback)))
+    exec('\n'.join(switch_to_asyncio(SyncPomp.on_response)))
+    exec('\n'.join(switch_to_asyncio(SyncPomp.on_parse_result)))
     exec('\n'.join(switch_to_asyncio(SyncPomp._request_done)))
+    exec('\n'.join(switch_to_asyncio(SyncPomp._process_items)))
+    exec('\n'.join(switch_to_asyncio(SyncPomp._put_requests)))
+    exec('\n'.join(switch_to_asyncio(SyncPomp._req_middlewares)))
+    exec('\n'.join(switch_to_asyncio(SyncPomp._resp_middlewares)))
+    exec('\n'.join(switch_to_asyncio(SyncPomp._exception_middlewares)))
+    exec('\n'.join(switch_to_asyncio(SyncPomp.finish)))
 
 
 class AioConcurrentCrawler(ConcurrentCrawler):
 
-    def process(self, response):
-
-        # build Planned object
-        done_future = Planned()
-
-        # fire done_future when asyncio finish response processing by
-        # crawler worker in executor
-        asyncio.ensure_future(
-            asyncio.get_event_loop().run_in_executor(
+    async def process(self, response):
+        try:
+            return await asyncio.get_event_loop().run_in_executor(
                 self.executor,
                 _run_crawler_worker,
                 self.worker_params,
                 response,
             )
-        ).add_done_callback(
-            partial(self._done, response, done_future)
-        )
-
-        return done_future
+        except Exception as e:
+            log.exception('Exception on %s', response)
+            return BaseCrawlException(
+                response=response,
+                exception=e,
+                exc_info=sys.exc_info(),
+            )

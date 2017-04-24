@@ -36,14 +36,38 @@ def switch_to_asyncio(method, skip_spaces=4):
             line = line.replace('# noqa', '').strip()
             line, directive = line.split('# asyncio:')
             if 'REPLACE' in directive:
-                yield '{0}{1} # by: {2}'.format(
-                    indent,
-                    directive.replace("REPLACE", line.strip()).strip(),
-                    directive,
-                )[skip_spaces:]
+                prefix = ''
+                if line.startswith('return'):
+                    line = line.replace('return', '')
+                    prefix = 'return '
+                elif ' = ' in line:
+                    left, right = line.split(' = ')
+                    line = '{} = {}'.format(left.strip(), directive.replace("REPLACE", right.strip()).strip())  # noqa
+                    yield '{0}{1} # by: {2}'.format(
+                        indent,
+                        line.strip(),
+                        directive.strip(),
+                    )[skip_spaces:]
+                else:
+                    yield '{0}{1} # by: {2}'.format(
+                        indent,
+                        directive.replace("REPLACE", line.strip()).strip(),
+                        directive.strip(),
+                    )[skip_spaces:]
             else:
-                yield '{0}{1} {2} # by: {1}'.format(
+                prefix = ''
+                if line.startswith('return'):
+                    line = line.replace('return', '')
+                    prefix = 'return '
+                elif ' = ' in line:
+                    left, right = line.split(' = ')
+                    directive = '{} = {} {}'.format(
+                        left.strip(), directive.strip(), right.strip(),
+                    )
+                    line = ''
+                yield '{0}{1}{2} {3} # by: {2}'.format(
                     indent,
+                    prefix,
                     directive.strip(),
                     line.strip(),
                 )[skip_spaces:]

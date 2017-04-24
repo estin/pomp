@@ -27,7 +27,7 @@ class ParsedItem(Item):
     response = Field()
 
     def __str__(self):
-        return '<ParsedItem by {s.worker} from {s.response.request}>'.format(
+        return '<ParsedItem by {s.worker} from {s.response}>'.format(
             s=self
         )
 

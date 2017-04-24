@@ -3,11 +3,19 @@ pomp changelog
 
 Here you can see the full list of changes between pomp releases.
 
-Version 0.2.2
+Version 0.3.0
 -------------
 
 Does not released yet
 
+- `BaseHttpResponse.get_request()` instead of `BaseHttpResponse.request`
+  property
+- BaseMiddleware.process_(request|response|exception) now may be awaitable
+- BaseCralwer.(process|next_requests|on_processing_done) now may be awaitable
+- BaseDownloader.(start|stop) now may be awaitable
+- `BaseDownloader.prepare(self)` renamed to `BaseDownloader.start(self,crawler)`
+- BasePipeline.(start|stop|process) now may be awaitable
+- process `Future` objects without wrapping it with `Planned` object
 - asynciotools with async/await syntax
 - removed `RUNNING`, `CANCELLED_AND_NOTIFIED`, `exception` method from
   `Planned` class

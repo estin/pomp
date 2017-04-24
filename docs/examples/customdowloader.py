@@ -12,29 +12,25 @@ class ReqRequest(BaseHttpRequest):
 
 class ReqResponse(BaseHttpResponse):
     def __init__(self, request, response):
-        self.req = request
+        self.request = request
 
         if not isinstance(response, Exception):
             self.body = response.text
 
-    @property
-    def request(self):
-        return self.req
+    def get_request(self):
+        return self.request
 
 
 class RequestsDownloader(BaseDownloader):
 
     def get(self, requests):
-        responses = []
         for request in iterator(requests):
-            response = self._fetch(request)
-            responses.append(response)
-        return responses
+            yield self._fetch(request)
 
     def _fetch(self, request):
         try:
-            res = requestslib.get(request.url)
-            return ReqResponse(request, res)
+            response = requestslib.get(request.url)
+            return ReqResponse(request, response)
         except Exception as e:
             print('Exception on %s: %s', request, e)
             return BaseCrawlException(request, exception=e)

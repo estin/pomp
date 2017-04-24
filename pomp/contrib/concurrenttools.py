@@ -126,7 +126,7 @@ class ConcurrentDownloader(BaseDownloader, ConcurrentMixin):
     def get_workers_count(self):
         return self.pool_size
 
-    def stop(self):
+    def stop(self, crawler):
         self.executor.shutdown()
 
 

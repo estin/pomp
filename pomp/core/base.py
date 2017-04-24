@@ -36,9 +36,11 @@ class BaseCrawler(object):  # pragma: no cover
 
         Called after the `extract_items` method.
 
+        May be `awaitable`.
+
         :note:
             Subclass may not implement this method.
-            Next requests may be returened with items in `extrat_items` method.
+            Next requests may be returned with items in `extrat_items` method.
 
         :param response: the instance of :class:`BaseHttpResponse`
         :rtype: ``None`` or request or requests (instance of
@@ -53,6 +55,8 @@ class BaseCrawler(object):  # pragma: no cover
     def extract_items(self, response):
         """Parse page and extract items.
 
+        May be `awaitable`.
+
         :param response: the instance of :class:`BaseHttpResponse`
         :rtype: item/items of any type
             or type of :class:`pomp.contrib.item.Item`
@@ -64,6 +68,8 @@ class BaseCrawler(object):  # pragma: no cover
     def on_processing_done(self, response):
         """Called when request/response was fully processed by middlewares,
         this crawler and and pipelines.
+
+        May be awaitable.
 
         :param response: the instance of :class:`BaseHttpResponse`
         """
@@ -105,7 +111,7 @@ class BaseDownloadWorker(object):  # pragma: no cover
         :param request: instance of :class:`BaseHttpRequest`
         :rtype: instance of :class:`BaseHttpResponse` or
                 :class:`BaseCrawlException` or :class:`.Planned`
-                for async behavior
+                or `asyncio.Future` for async behavior
         """
         raise NotImplementedError()
 
@@ -118,38 +124,24 @@ class BaseDownloader(object):
     - make http request and fetch response.
     """
 
-    def prepare(self):
-        """Prepare downloader before processing starts."""
+    def start(self, crawler):
+        """Prepare downloader before processing starts.
+
+        May be `awaitable`.
+
+        :param crawler: crawler that extracts items
+        """
         pass
-
-    def process(self, requests, crawler):
-        # requests list can consists of BaseCrawlException instances
-        # we must yield it without passing to downloader
-        requests_as_exceptions = []
-
-        def _filter(requests):
-            for item in requests:
-                if isinstance(item, BaseCrawlException):
-                    requests_as_exceptions.append(item)
-                else:
-                    yield item
-
-        # execute requests by downloader
-        for response in self.get(_filter(requests or [])):
-            yield response
-
-        # when we yield exeption as request we do not break request-response
-        # processing logic
-        for exception in requests_as_exceptions:
-            yield exception
 
     def get(self, requests):  # pragma: no cover
         """Execute requests
 
+        May be `awaitable`.
+
         :param requests: list of instances of :class:`BaseHttpRequest`
         :rtype: list of instances of :class:`BaseHttpResponse` or
                 :class:`BaseCrawlException` or :class:`.Planned`
-                for async behavior
+                or `asyncio.Future` object for async behavior
         """
         raise NotImplementedError()
 
@@ -159,7 +151,13 @@ class BaseDownloader(object):
         """
         return 0
 
-    def stop(self):
+    def stop(self, crawler):
+        """Stop downloader.
+
+        May be `awaitable`.
+
+        :param crawler: crawler that extracts items
+        """
         pass
 
 
@@ -178,12 +176,16 @@ class BasePipeline(object):  # pragma: no cover
 
         Open files and database connections, etc.
 
+        May be `awaitable`.
+
         :param crawler: crawler that extracts items
         """
         pass
 
     def process(self, crawler, item):
         """Process extracted item
+
+        May be `awaitable`.
 
         :param crawler: crawler that extracts items
         :param item: extracted item
@@ -196,6 +198,8 @@ class BasePipeline(object):  # pragma: no cover
 
         Close files and database connections, etc.
 
+        May be `awaitable`.
+
         :param crawler: crawler that extracts items
         """
         pass
@@ -207,6 +211,8 @@ class BaseMiddleware(object):
     def process_request(self, request, crawler, downloader):
         """Change request before it will be executed by downloader
 
+        May be `awaitable`.
+
         :param request: instance of :class:`BaseHttpRequest`
         :param crawler: instance of :class:`BaseCrawler`
         :param downloader: instance of :class:`BaseDownloader`
@@ -216,6 +222,8 @@ class BaseMiddleware(object):
 
     def process_response(self, response, crawler, downloader):
         """Modify response before content is extracted by the crawler.
+
+        May be `awaitable`.
 
         :param response: instance of :class:`BaseHttpResponse`
         :param crawler: instance of :class:`BaseCrawler`
@@ -227,6 +235,8 @@ class BaseMiddleware(object):
 
     def process_exception(self, exception, crawler, downloader):
         """Handle exception
+
+        May be `awaitable`.
 
         :param exception: instance of :class:`BaseCrawlException`
         :param crawler: instance of :class:`BaseCrawler`
@@ -255,10 +265,9 @@ class BaseHttpRequest(BaseRequest):  # pragma: no cover
 class BaseHttpResponse(BaseResponse):  # pragma: no cover
     """HTTP response interface"""
 
-    @property
-    def request(self):
+    def get_request(self):
         """Request :class:`BaseHttpRequest`"""
-        raise NotImplementedError()
+        pass
 
 
 class BaseCrawlException(Exception):  # pragma: no cover

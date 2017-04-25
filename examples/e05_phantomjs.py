@@ -117,7 +117,7 @@ class PhantomDownloader(ConcurrentDownloader):
         )
 
     def stop(self, *args, **kwargs):
-        super(PhantomDownloader, self).stop()
+        super(PhantomDownloader, self).stop(*args, **kwargs)
         log.debug("close all phantomjs nodes")
         for driver in self.drivers:
             pid = driver.service.process.pid

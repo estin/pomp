@@ -223,20 +223,20 @@ class TestContribAsyncio(object):
                 for r in self.collect_middleware.requests]) == \
             set(self.httpd.sitemap.keys())
 
-    # def test_asyncio_engine_with_async_process(self):
-    #     pomp = AioPomp(
-    #         downloader=AiohttpDownloaderWithAsyncProcess(),
-    #         middlewares=self.middlewares,
-    #         pipelines=[],
-    #     )
-    #
-    #     loop = asyncio.get_event_loop()
-    #     loop.run_until_complete(pomp.pump(Crawler()))
-    #
-    #     assert \
-    #         set([r.url.replace(self.httpd.location, '')
-    #             for r in self.collect_middleware.requests]) == \
-    #         set(self.httpd.sitemap.keys())
+    def test_asyncio_engine_with_async_process(self):
+        pomp = AioPomp(
+            downloader=AiohttpDownloaderWithAsyncProcess(),
+            middlewares=self.middlewares,
+            pipelines=[],
+        )
+
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(pomp.pump(Crawler()))
+
+        assert \
+            set([r.url.replace(self.httpd.location, '')
+                for r in self.collect_middleware.requests]) == \
+            set(self.httpd.sitemap.keys())
 
     def test_asyncio_engine_with_aio_crawler(self):
         pomp = AioPomp(

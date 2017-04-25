@@ -22,8 +22,8 @@ class DummyCrawler(BaseCrawler):
     ENTRY_REQUESTS = None
 
     def next_requests(self, response):
-        res = response.body.get('links', [])
-        return res
+        for item in response.body.get('links', []):
+            yield DummyRequest(item)
 
     def extract_items(self, response):
         item = DummyItem()

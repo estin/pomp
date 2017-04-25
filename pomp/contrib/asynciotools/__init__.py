@@ -19,7 +19,7 @@ from pomp.core.base import (  # noqa
     BaseHttpResponse,
     BaseCrawlException,
 )
-from pomp.core.utils import iterator, switch_to_asyncio, isstring  # noqa
+from pomp.core.utils import iterator, switch_to_asyncio  # noqa
 from pomp.core.engine import StopCommand
 from pomp.core.engine import Pomp as SyncPomp
 

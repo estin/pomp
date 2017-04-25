@@ -1,14 +1,9 @@
 import re
 from pomp.core.base import BaseCrawler
-from pomp.contrib.item import Item, Field
 from pomp.contrib.urllibtools import UrllibHttpRequest
 
 
 python_sentence_re = re.compile('[\w\s]{0,}python[\s\w]{0,}', re.I | re.M)
-
-
-class MyItem(Item):
-    sentence = Field()
 
 
 class MyCrawler(BaseCrawler):
@@ -17,9 +12,9 @@ class MyCrawler(BaseCrawler):
 
     def extract_items(self, response):
         for i in python_sentence_re.findall(response.body.decode('utf-8')):
-            item = MyItem(sentence=i.strip())
-            print(item)
-            return item
+            sentence = i.strip()
+            print("Sentence: {}".format(sentence))
+            yield sentence
 
 
 if __name__ == '__main__':

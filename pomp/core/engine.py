@@ -15,7 +15,7 @@ from pomp.core.base import (
     BaseHttpResponse,
     BaseCrawlException,
 )
-from pomp.core.utils import iterator, isstring
+from pomp.core.utils import iterator
 
 try:
     import Queue as queue
@@ -302,7 +302,7 @@ class Pomp(BaseEngine):
                 continue
 
             # yield item as request
-            if isinstance(item, BaseRequest) or isstring(item):
+            if isinstance(item, BaseRequest):
                 yield item
             else:
                 # proccess item as data item by pipes

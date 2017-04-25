@@ -8,6 +8,7 @@ Version 0.3.0
 
 Does not released yet
 
+- non `BaseRequest` instances are items
 - `BaseHttpResponse.get_request()` instead of `BaseHttpResponse.request`
   property
 - BaseMiddleware.process_(request|response|exception) now may be awaitable

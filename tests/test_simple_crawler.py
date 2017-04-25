@@ -32,13 +32,19 @@ class Crawler(DummyCrawler):
         url = 'http://python.org/1/trash'
         result = url if url not in self.crawled_urls else None
         self.crawled_urls.append(result)
-        yield result
+        if result:
+            yield DummyRequest(result)
+        else:
+            yield result
 
     def next_requests(self, response):
         url = 'http://python.org/2'
         result = url if url not in self.crawled_urls else None
         self.crawled_urls.append(result)
-        return result
+        if result:
+            yield DummyRequest(result)
+        else:
+            yield result
 
 
 class RoadPipeline(BasePipeline):

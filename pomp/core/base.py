@@ -105,8 +105,10 @@ class BaseQueue(object):  # pragma: no cover
 class BaseDownloadWorker(object):  # pragma: no cover
     """Download worker interface"""
 
-    def get_one(self, request):
+    def process(self, request):
         """Execute request
+
+        May be awaitable.
 
         :param request: instance of :class:`BaseHttpRequest`
         :rtype: instance of :class:`BaseHttpResponse` or
@@ -133,13 +135,14 @@ class BaseDownloader(object):
         """
         pass
 
-    def get(self, requests):  # pragma: no cover
-        """Execute requests
+    def process(self, crawler, request):  # pragma: no cover
+        """Execute request
 
         May be `awaitable`.
 
-        :param requests: list of instances of :class:`BaseHttpRequest`
-        :rtype: list of instances of :class:`BaseHttpResponse` or
+        :param crawler: crawler that extracts items
+        :param request: instances of :class:`BaseHttpRequest`
+        :rtype: instance of :class:`BaseHttpResponse` or
                 :class:`BaseCrawlException` or :class:`.Planned`
                 or `asyncio.Future` object for async behavior
         """

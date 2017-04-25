@@ -17,7 +17,6 @@ from pomp.core.base import (
     BaseHttpRequest, BaseHttpResponse, BaseMiddleware,
     BaseCrawlException,
 )
-from pomp.core.utils import iterator
 
 
 log = logging.getLogger('pomp.contrib.urllib')
@@ -28,7 +27,7 @@ class UrllibDownloadWorker(BaseDownloadWorker):
     def __init__(self, timeout=None):
         self.timeout = None
 
-    def get_one(self, request):
+    def process(self, request):
         try:
             log.info("Fetch %s %s %s", type(request), request, request.url)
             res = urlopen(request.url, timeout=self.timeout)
@@ -53,9 +52,8 @@ class UrllibDownloader(BaseDownloader):
         super(UrllibDownloader, self).__init__()
         self.worker = UrllibDownloadWorker(timeout=timeout)
 
-    def get(self, requests):
-        for request in iterator(requests):
-            yield self.worker.get_one(request)
+    def process(self, crawler, request):
+        return self.worker.process(request)
 
 
 class UrllibHttpRequest(Request, BaseHttpRequest):

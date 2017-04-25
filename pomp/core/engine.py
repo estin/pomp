@@ -174,24 +174,36 @@ class Pomp(BaseEngine):
                 continue
 
             # execute requests by downloader
-            for response in self.downloader.get(iterator(request)):
-                if response is None:
-                    # response was rejected by middlewares
-                    pass
-                elif isinstance(response, (BaseResponse, BaseCrawlException)):
-                    # process response by crawler
-                    self.response_callback(  # asyncio: await
-                        crawler,
-                        # pass response to middlewares
-                        self._resp_middlewares(response, crawler)  # asyncio: await  # noqa
-                    )
-                else:  # async behaviour
-                    def _(r):
-                        def x():  # asyncio: async
-                            response = self._resp_middlewares(r.result(), crawler)  # asyncio: await  # noqa
-                            self.response_callback(crawler, response)  # asyncio: ensure_future(REPLACE) # noqa
-                        x()  # asyncio: ensure_future(REPLACE)
-                    response.add_done_callback(_)
+            try:
+                response = self.downloader.process(crawler, request)  # asyncio: _wrap_to_future(REPLACE)  # noqa
+            except Exception as e:
+                log.exception("On downloader process")
+                self._exception_middlewares(  # asyncio: await
+                    BaseCrawlException(
+                        request=request,
+                        response=None,
+                        exception=e,
+                        exc_info=sys.exc_info(),
+                    ),
+                    crawler,
+                )
+                self._request_done(None, crawler)  # asyncio: await
+                continue
+
+            if isinstance(response, (BaseResponse, BaseCrawlException)):
+                # process response by crawler
+                self.response_callback(  # asyncio: await
+                    crawler,
+                    # pass response to middlewares
+                    self._resp_middlewares(response, crawler)  # asyncio: await  # noqa
+                )
+            else:  # async behaviour
+                def _(r):
+                    def x():  # asyncio: async
+                        response = self._resp_middlewares(r.result(), crawler)  # asyncio: await  # noqa
+                        self.response_callback(crawler, response)  # asyncio: ensure_future(REPLACE) # noqa
+                    x()  # asyncio: ensure_future(REPLACE)
+                response.add_done_callback(_)
 
     def prepare(self, crawler):  # asyncio: async
         # prepare middleware chain

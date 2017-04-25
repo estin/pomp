@@ -37,10 +37,8 @@ class DummyCrawler(BaseCrawler):
 
 class DummyDownloader(BaseDownloader):
 
-    def get(self, requests):
-        for request in requests:
-            response = DummyResponse(request, 'some html code')
-            yield response
+    def process(self, crawler, request):
+        return DummyResponse(request, 'some html code')
 
 
 class RequestResponseMiddleware(BaseMiddleware):

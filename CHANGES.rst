@@ -8,6 +8,8 @@ Version 0.3.0
 
 Does not released yet
 
+- `BaseDownloadWorker.get_one(self, request)` -> `BaseDownloadWorker.process(self, request)`
+- `BaseDownloader.get(self, requests)` -> `BaseDownloader.process(self, crawler, request)`
 - non `BaseRequest` instances are items
 - `BaseHttpResponse.get_request()` instead of `BaseHttpResponse.request`
   property

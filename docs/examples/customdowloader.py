@@ -2,8 +2,6 @@ import requests as requestslib
 from pomp.core.base import BaseDownloader, BaseCrawlException
 from pomp.core.base import BaseHttpRequest, BaseHttpResponse
 
-from pomp.core.utils import iterator
-
 
 class ReqRequest(BaseHttpRequest):
     def __init__(self, url):
@@ -23,14 +21,9 @@ class ReqResponse(BaseHttpResponse):
 
 class RequestsDownloader(BaseDownloader):
 
-    def get(self, requests):
-        for request in iterator(requests):
-            yield self._fetch(request)
-
-    def _fetch(self, request):
+    def process(self, crawler, request):
         try:
-            response = requestslib.get(request.url)
-            return ReqResponse(request, response)
+            return ReqResponse(request, requestslib.get(request.url))
         except Exception as e:
             print('Exception on %s: %s', request, e)
             return BaseCrawlException(request, exception=e)

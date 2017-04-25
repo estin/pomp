@@ -34,6 +34,12 @@ async def _co(value):
     return value
 
 
+def _wrap_to_future(value):
+    if inspect.iscoroutine(value):
+        return ensure_future(value)
+    return value
+
+
 log = logging.getLogger(__name__)
 
 

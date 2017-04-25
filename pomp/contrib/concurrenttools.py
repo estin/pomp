@@ -26,7 +26,7 @@ def _run_download_worker(params, request):
         # Initialize worker and call get_one method
         return params['worker_class'](
             **params.get('worker_kwargs', {})
-        ).get_one(request)
+        ).process(request)
     except Exception:
         log.exception(
             "Exception on download worker pid=%s request=%s", pid, request
@@ -103,25 +103,22 @@ class ConcurrentDownloader(BaseDownloader, ConcurrentMixin):
 
         super(ConcurrentDownloader, self).__init__()
 
-    def get(self, requests):
+    def process(self, crawler, request):
 
-        requests = list(requests)
-        for request in requests:
+        # delegate request processing to the executor
+        future = self.executor.submit(
+            _run_download_worker, self.worker_params, request,
+        )
 
-            # delegate request processing to the executor
-            future = self.executor.submit(
-                _run_download_worker, self.worker_params, request,
-            )
+        # build Planned object
+        done_future = Planned()
 
-            # build Planned object
-            done_future = Planned()
+        # when executor finish request - fire done_future
+        future.add_done_callback(
+            partial(self._done, request, done_future)
+        )
 
-            # when executor finish request - fire done_future
-            future.add_done_callback(
-                partial(self._done, request, done_future)
-            )
-
-            yield done_future
+        return done_future
 
     def get_workers_count(self):
         return self.pool_size

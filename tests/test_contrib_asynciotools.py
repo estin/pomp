@@ -123,26 +123,29 @@ class AiohttpDownloader(BaseDownloader):
     def get_workers_count(self):
         return 2
 
-    def get(self, requests):
-        for request in requests:
-            yield ensure_future(self._fetch(request))
+    def process(self, crawler, request):
+        return ensure_future(self._fetch(request))
 
 
 class AiohttpDownloaderWithPlanned(AiohttpDownloader):
 
-    def get(self, requests):
-        for request in requests:
+    def process(self, crawler, request):
+        future = asyncio.Future()
+        ensure_future(self._fetch(request, future))
 
-            future = asyncio.Future()
-            ensure_future(self._fetch(request, future))
+        planned = Planned()
 
-            planned = Planned()
+        def build_response(f):
+            planned.set_result(f.result())
+        future.add_done_callback(build_response)
 
-            def build_response(f):
-                planned.set_result(f.result())
-            future.add_done_callback(build_response)
+        return planned
 
-            yield planned
+
+class AiohttpDownloaderWithAsyncProcess(AiohttpDownloader):
+
+    async def process(self, crawler, request):
+        return await self._fetch(request)
 
 
 class Crawler(DummyCrawler):
@@ -219,6 +222,21 @@ class TestContribAsyncio(object):
             set([r.url.replace(self.httpd.location, '')
                 for r in self.collect_middleware.requests]) == \
             set(self.httpd.sitemap.keys())
+
+    # def test_asyncio_engine_with_async_process(self):
+    #     pomp = AioPomp(
+    #         downloader=AiohttpDownloaderWithAsyncProcess(),
+    #         middlewares=self.middlewares,
+    #         pipelines=[],
+    #     )
+    #
+    #     loop = asyncio.get_event_loop()
+    #     loop.run_until_complete(pomp.pump(Crawler()))
+    #
+    #     assert \
+    #         set([r.url.replace(self.httpd.location, '')
+    #             for r in self.collect_middleware.requests]) == \
+    #         set(self.httpd.sitemap.keys())
 
     def test_asyncio_engine_with_aio_crawler(self):
         pomp = AioPomp(

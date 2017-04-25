@@ -33,7 +33,7 @@ log = logging.getLogger(__name__)
 class MockedDownloadWorker(BaseDownloadWorker):
     sitemap = make_sitemap(level=2, links_on_page=2)
 
-    def get_one(self, request):
+    def process(self, request):
         time.sleep(random.uniform(0.3, 0.6))
         key = request.url.replace('http://localhost', '')
         res = self.sitemap.get(key)
@@ -46,7 +46,7 @@ class MockedDownloadWorker(BaseDownloadWorker):
 
 
 class MockedDownloadWorkerWithException(BaseDownloadWorker):
-    def get_one(self, request):
+    def process(self, request):
         raise Exception('something wrong in request processing')
 
 

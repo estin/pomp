@@ -6,13 +6,8 @@ e02_quotes.py on aiohttp downloader
 """
 import sys
 import logging
+
 import asyncio
-
-try:
-    from asyncio import ensure_future
-except ImportError:
-    from asyncio import async as ensure_future
-
 import aiohttp
 
 from pomp.core.base import (
@@ -54,7 +49,7 @@ class AiohttpDownloader(BaseDownloader):
         log.debug("[AiohttpDownloader] Close session")
         self.session.close()
 
-    async def _fetch(self, request):
+    async def process(self, crawler, request):
         log.debug("[AiohttpDownloader] Start fetch: %s", request.url)
         try:
             async with self.session.get(request.url) as response:
@@ -72,10 +67,6 @@ class AiohttpDownloader(BaseDownloader):
                 exception=e,
                 exc_info=sys.exc_info(),
             )
-
-    def get(self, requests):
-        for request in requests:
-            yield ensure_future(self._fetch(request))
 
 
 if __name__ == '__main__':

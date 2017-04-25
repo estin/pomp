@@ -57,7 +57,7 @@ class PhantomDownloadWorker(BaseDownloadWorker):
     def __init__(self):
         self.pid = os.getpid()
 
-    def get_one(self, request):
+    def process(self, request):
         # attach webdriver to already started phanomjs node
         driver = webdriver.Remote(
             command_executor=request.driver_url,
@@ -103,18 +103,13 @@ class PhantomDownloader(ConcurrentDownloader):
             webdriver.PhantomJS() for i in range(self.pool_size)
         ])
 
-    def get(self, requests):
+    def process(self, crawler, request):
 
         # associate each request with phantomjs node
-        def _associate_driver_url(request):
-            request.driver_url = self.drivers[0].command_executor._url
-            log.debug("Associated request %s", request)
-            self.drivers.rotate(1)
-            return request
-
-        return super(PhantomDownloader, self).get(
-            map(_associate_driver_url, requests)
-        )
+        request.driver_url = self.drivers[0].command_executor._url
+        log.debug("Associated request %s", request)
+        self.drivers.rotate(1)
+        return super(PhantomDownloader, self).process(crawler, request)
 
     def stop(self, *args, **kwargs):
         super(PhantomDownloader, self).stop(*args, **kwargs)
